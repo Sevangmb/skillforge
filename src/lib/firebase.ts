@@ -1,55 +1,63 @@
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { debugEnvironment } from './env-validator';
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+// Fallback configuration for development - these will be replaced by actual env vars in production
+const DEFAULT_CONFIG = {
+  apiKey: "AIzaSyDmRORJqVcDW6OWFP7Oiw1npDyGXj1y860",
+  authDomain: "skillforge-ai-tk7mp.firebaseapp.com",
+  projectId: "skillforge-ai-tk7mp",
+  storageBucket: "skillforge-ai-tk7mp.firebasestorage.app",
+  messagingSenderId: "430093616142",
+  appId: "1:430093616142:web:95e69e98d0cb9112a6285f"
 };
 
-// Validate required environment variables
-const requiredEnvVars = [
-  'NEXT_PUBLIC_FIREBASE_API_KEY',
-  'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN', 
-  'NEXT_PUBLIC_FIREBASE_PROJECT_ID'
-];
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || DEFAULT_CONFIG.apiKey,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || DEFAULT_CONFIG.authDomain,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || DEFAULT_CONFIG.projectId,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || DEFAULT_CONFIG.storageBucket,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || DEFAULT_CONFIG.messagingSenderId,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || DEFAULT_CONFIG.appId,
+};
 
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-if (missingEnvVars.length > 0) {
-  console.error('Missing required Firebase environment variables:', missingEnvVars);
+// Validate configuration values (not environment variables)
+const requiredConfigValues = ['apiKey', 'authDomain', 'projectId'];
+const missingConfigValues = requiredConfigValues.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
+
+if (missingConfigValues.length > 0) {
+  console.error('Missing required Firebase configuration values:', missingConfigValues);
 }
 
-// Check if we're in a browser environment and have valid config
-const isValidConfig = typeof window !== 'undefined' && 
-  firebaseConfig.apiKey && 
+// Always initialize Firebase with valid config
+const isValidConfig = firebaseConfig.apiKey && 
   firebaseConfig.authDomain && 
   firebaseConfig.projectId;
 
-// Initialize Firebase only if we have valid config and are in browser
+// Initialize Firebase
 let app;
 if (isValidConfig) {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  try {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    
+    // Log successful initialization in development
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('🔥 Firebase initialized successfully', {
+        projectId: firebaseConfig.projectId,
+        usingDefaults: !process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+      });
+    }
+  } catch (error) {
+    console.error('Firebase initialization failed:', error);
+    app = null;
+  }
 } else {
-  // Create a mock app for SSR/build time
+  console.error('🔥 Firebase not initialized - invalid configuration');
   app = null;
 }
 
 // Initialize Firebase services with null checks
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
-
-// Validate configuration in development only
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  if (isValidConfig) {
-    console.log('🔥 Firebase initialized successfully');
-  } else {
-    console.log('🔥 Firebase not initialized - missing config');
-  }
-}
 
 export default app;

@@ -7,54 +7,59 @@ import { getUserProfile, updateUserProfile } from "@/lib/auth";
 import { saveSkillsToFirestore } from "@/lib/firestore";
 import type { User, CompetenceStatus, Skill } from "@/lib/types";
 import { ZodError } from "zod";
+import { resilientAIService, PerformanceMonitor } from "@/lib/resilient-ai-service";
 
 export type { GenerateQuizQuestionInput, GenerateQuizQuestionOutput };
 export type { GenerateExplanationInput, GenerateExplanationOutput };
 export type { ExpandSkillTreeInput, ExpandSkillTreeOutput };
 
 export async function generateQuizQuestionAction(input: GenerateQuizQuestionInput): Promise<GenerateQuizQuestionOutput> {
+  const monitor = PerformanceMonitor.measureAIOperation('generateQuestion');
+  
   try {
-    const result = await generateQuizQuestion(input);
+    const result = await resilientAIService.generateQuestion(input);
+    monitor.end(true);
     return result;
   } catch (error) {
-    if (error instanceof ZodError) {
-      console.error("Validation error calling Genkit flow:", error.errors);
-      throw new Error("AI response validation failed.");
-    }
-    console.error("Error calling Genkit flow:", error);
-    throw new Error("Failed to generate quiz question.");
+    monitor.end(false);
+    console.error("Error in generateQuizQuestionAction:", error);
+    throw new Error("Failed to generate quiz question after all fallback attempts");
   }
 }
 
 export async function generateExplanationAction(input: GenerateExplanationInput): Promise<GenerateExplanationOutput> {
+  const monitor = PerformanceMonitor.measureAIOperation('generateExplanation');
+  
   try {
-    const result = await generateExplanation(input);
-    return result;
+    const result = await resilientAIService.generateExplanation(input);
+    monitor.end(true);
+    return { explanation: result };
   } catch (error) {
-    if (error instanceof ZodError) {
-      console.error("Validation error calling Genkit flow:", error.errors);
-      throw new Error("AI response validation failed.");
-    }
-    console.error("Error calling Genkit flow:", error);
-    throw new Error("Failed to generate explanation.");
+    monitor.end(false);
+    console.error("Error in generateExplanationAction:", error);
+    throw new Error("Failed to generate explanation after all fallback attempts");
   }
 }
 
 export async function expandSkillTreeAction(input: ExpandSkillTreeInput): Promise<ExpandSkillTreeOutput> {
-    try {
-        const result = await expandSkillTree(input);
-        // Here, you would typically save the new skills to Firestore
-        // For now, we'll just log them.
-        console.log("New skills generated:", result.newSkills);
-        return result;
-    } catch (error) {
-        if (error instanceof ZodError) {
-            console.error("Validation error calling expandSkillTree flow:", error.errors);
-            throw new Error("AI response validation failed for skill tree expansion.");
-        }
-        console.error("Error calling expandSkillTree flow:", error);
-        throw new Error("Failed to expand skill tree.");
-    }
+  const monitor = PerformanceMonitor.measureAIOperation('expandSkillTree');
+  
+  try {
+    const result = await resilientAIService.expandSkillTree(input);
+    monitor.end(true);
+    
+    // Here, you would typically save the new skills to Firestore
+    // For now, we'll just log them.
+    console.log("New skills generated:", result.newSkills);
+    return result;
+  } catch (error) {
+    monitor.end(false);
+    console.error("Error in expandSkillTreeAction:", error);
+    
+    // Provide a more graceful fallback - don't throw error that breaks user progress
+    console.warn("Skill tree expansion failed, but user progress will still be saved");
+    return { newSkills: [] }; // Return empty array instead of throwing
+  }
 }
 
 

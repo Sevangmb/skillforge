@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           let userProfile = await getUserProfile(firebaseUser.uid);
           
-          // Si le profil n'existe pas, créer un nouveau profil
+          // If user profile doesn't exist, create a new one
           if (!userProfile) {
             console.log('User profile not found, creating new profile for:', firebaseUser.email);
             userProfile = await createUserProfile(firebaseUser);

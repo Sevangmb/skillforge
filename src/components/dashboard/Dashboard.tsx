@@ -31,20 +31,38 @@ export default function Dashboard({ currentUser }: DashboardProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchData() {
+      if (!isMounted) return;
+      
       setLoading(true);
-      const skillsFromDb = await getSkillsFromFirestore();
-      setSkills(skillsFromDb);
-      setLoading(false);
+      try {
+        const skillsFromDb = await getSkillsFromFirestore();
+        if (isMounted) {
+          setSkills(skillsFromDb);
+        }
+      } catch (error) {
+        console.error('Failed to fetch skills:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     }
 
     fetchData();
 
     const unsubscribe = subscribeToLeaderboard((users) => {
-      setLeaderboardUsers(users);
+      if (isMounted) {
+        setLeaderboardUsers(users);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const handleNodeClick = (skill: Skill) => {

@@ -80,40 +80,71 @@ export const saveSkillsToFirestore = async (skills: Skill[]): Promise<void> => {
   }
 };
 
-export const getSkillsFromFirestore = async (): Promise<Skill[]> => {
-  try {
-    if (!db) {
-      console.warn('Firestore is not initialized');
-      return [];
+export const getSkillsFromFirestore = async (retries = 2): Promise<Skill[]> => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      if (!db) {
+        console.warn('Firestore is not initialized');
+        return [];
+      }
+      
+      const skillsCol = collection(db, 'skills');
+      const skillSnapshot = await getDocs(skillsCol);
+      const skills = skillSnapshot.docs.map(doc => doc.data() as Skill);
+      
+      if (skills.length === 0 && attempt < retries) {
+        console.warn(`No skills found, attempt ${attempt + 1}/${retries + 1}`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        continue;
+      }
+      
+      return skills;
+    } catch (error) {
+      console.error(`Error getting skills from Firestore (attempt ${attempt + 1}):`, error);
+      
+      if (attempt === retries) {
+        // On final attempt, return empty array instead of throwing
+        return [];
+      }
+      
+      // Wait before retry with exponential backoff
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
     }
-    const skillsCol = collection(db, 'skills');
-    const skillSnapshot = await getDocs(skillsCol);
-    return skillSnapshot.docs.map(doc => doc.data() as Skill);
-  } catch (error) {
-    console.error('Error getting skills from Firestore:', error);
-    return [];
   }
+  
+  return [];
 };
 
 // Leaderboard operations
-export const getLeaderboard = async (limitCount: number = 10): Promise<User[]> => {
-  try {
-    if (!db) {
-      console.warn('Firestore is not initialized');
-      return [];
+export const getLeaderboard = async (limitCount: number = 10, retries = 2): Promise<User[]> => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      if (!db) {
+        console.warn('Firestore is not initialized');
+        return [];
+      }
+      
+      const usersCol = collection(db, 'users');
+      const leaderboardQuery = query(
+        usersCol,
+        orderBy('profile.totalPoints', 'desc'),
+        limit(limitCount)
+      );
+      const snapshot = await getDocs(leaderboardQuery);
+      return snapshot.docs.map(doc => doc.data() as User);
+    } catch (error) {
+      console.error(`Error getting leaderboard (attempt ${attempt + 1}):`, error);
+      
+      if (attempt === retries) {
+        return [];
+      }
+      
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
     }
-    const usersCol = collection(db, 'users');
-    const leaderboardQuery = query(
-      usersCol,
-      orderBy('profile.totalPoints', 'desc'),
-      limit(limitCount)
-    );
-    const snapshot = await getDocs(leaderboardQuery);
-    return snapshot.docs.map(doc => doc.data() as User);
-  } catch (error) {
-    console.error('Error getting leaderboard:', error);
-    return [];
   }
+  
+  return [];
 };
 
 // Real-time listeners

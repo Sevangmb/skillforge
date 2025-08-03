@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle, CheckCircle, Loader2, Sparkles } from "lucide-react";
+import { FeatureErrorBoundary } from "@/components/ErrorBoundary";
 
 interface QuizModalProps {
   isOpen: boolean;
@@ -119,6 +120,7 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
           className: "bg-green-500 text-white"
         });
       } catch (e) {
+        console.error("Error saving progress:", e);
         toast({
           title: "Error",
           description: "Could not save your progress.",
@@ -144,6 +146,7 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
         });
         setAiExplanation(result.explanation);
       } catch (e) {
+        console.error("Error generating explanation:", e);
         setAiExplanation("Sorry, I couldn't generate an explanation right now.");
       } finally {
         setExplanationLoading(false);
@@ -165,9 +168,28 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
   };
 
 
+  // Offline Quiz Fallback Component
+  const OfflineQuizFallback = () => (
+    <div className="p-4 text-center">
+      <h3 className="text-lg font-semibold mb-2">Quiz Temporarily Unavailable</h3>
+      <p className="text-muted-foreground mb-4">
+        We're having trouble loading the quiz. You can try again or continue exploring other skills.
+      </p>
+      <div className="space-y-2">
+        <Button onClick={() => window.location.reload()} className="w-full">
+          Try Again
+        </Button>
+        <Button variant="outline" onClick={onClose} className="w-full">
+          Close
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] bg-secondary border-primary/50">
+        <FeatureErrorBoundary fallback={<OfflineQuizFallback />}>
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl text-primary">{skill?.name}</DialogTitle>
           <DialogDescription>Answer the question to increase your competence.</DialogDescription>
@@ -247,6 +269,7 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
             {isAnswered ? "Next Question" : "Skip"}
           </Button>
         </DialogFooter>
+        </FeatureErrorBoundary>
       </DialogContent>
     </Dialog>
   );

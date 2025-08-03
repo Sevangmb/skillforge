@@ -1,6 +1,6 @@
 import type { Skill, SkillStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Code, Database, Cloud, Cpu, GitBranch, Lock, Star, Atom, FlaskConical, Dna, Scroll, Languages, Globe, Cog, Helix, BrainCircuit, Landmark, Milestone } from "lucide-react";
+import { Code, Database, Cloud, Cpu, GitBranch, Lock, Star, Atom, FlaskConical, Dna, Scroll, Languages, Globe, Cog, BrainCircuit, Landmark, Milestone, Zap } from "lucide-react";
 
 interface SkillNodeProps {
   skill: Skill;
@@ -21,7 +21,7 @@ const ICONS: Record<string, React.ElementType> = {
   Languages,
   Globe,
   Cog,
-  Helix,
+  Helix: Zap, // Use Zap as replacement for missing Helix icon
   BrainCircuit,
   Landmark,
   Milestone,

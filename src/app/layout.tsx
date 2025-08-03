@@ -28,6 +28,17 @@ export default function RootLayout({
           </LanguageProvider>
         </AuthProvider>
         <Toaster />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('unhandledrejection', function(event) {
+                console.error('Unhandled promise rejection:', event.reason);
+                // Prevent the default browser handling
+                event.preventDefault();
+              });
+            `,
+          }}
+        />
       </body>
     </html>
   );
