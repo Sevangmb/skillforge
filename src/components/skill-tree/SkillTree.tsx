@@ -37,11 +37,13 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   }, [skills]);
   
   const visibleSkills = useMemo(() => {
-    // Corrected logic: A skill is visible if it has no prerequisites OR if all its prerequisites are completed.
     return skills.filter(skill => {
-        return skill.prereqs.length === 0 || skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
+        if (skill.prereqs.length === 0) {
+            return true;
+        }
+        return skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
     });
-}, [skills, user.competences]);
+  }, [skills, user.competences]);
 
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
