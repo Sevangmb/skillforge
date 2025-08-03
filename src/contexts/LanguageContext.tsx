@@ -5,6 +5,9 @@ import { useAuth } from './AuthContext';
 import { updateUserProfile } from '@/lib/auth';
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE, getBrowserLanguage } from '@/lib/i18n';
 import type { Language } from '@/lib/i18n';
+// Import translations statically for immediate availability
+import enTranslations from '@/locales/en.json';
+import frTranslations from '@/locales/fr.json';
 
 interface LanguageContextType {
   currentLanguage: string;
@@ -28,56 +31,49 @@ interface LanguageProviderProps {
   children: React.ReactNode;
 }
 
-// Translations storage
-let translations: Record<string, Record<string, string>> = {};
+// Translations storage with preloaded data
+const translations: Record<string, any> = {
+  en: enTranslations,
+  fr: frTranslations,
+};
 
-// Load translations dynamically
-const loadTranslations = async (languageCode: string) => {
-  if (translations[languageCode]) {
-    return translations[languageCode];
-  }
-
-  try {
-    const module = await import(`@/locales/${languageCode}.json`);
-    translations[languageCode] = module.default;
-    return translations[languageCode];
-  } catch (error) {
-    console.warn(`Failed to load translations for ${languageCode}, falling back to English`);
-    if (languageCode !== DEFAULT_LANGUAGE) {
-      return loadTranslations(DEFAULT_LANGUAGE);
-    }
-    return {};
-  }
+// Get translations synchronously
+const getTranslations = (languageCode: string): any => {
+  return translations[languageCode] || translations[DEFAULT_LANGUAGE] || {};
 };
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const { user, firebaseUser } = useAuth();
-  const [currentLanguage, setCurrentLanguage] = useState<string>(DEFAULT_LANGUAGE);
-  const [currentTranslations, setCurrentTranslations] = useState<Record<string, string>>({});
-
-  // Initialize language from user preferences or browser
-  useEffect(() => {
-    // Skip initialization during SSR
-    if (typeof window === 'undefined') {
-      return;
+  
+  // Initialize with proper language and translations immediately
+  const getInitialLanguage = (): string => {
+    if (typeof window === 'undefined') return DEFAULT_LANGUAGE;
+    
+    if (user?.preferences?.language) {
+      return user.preferences.language;
     }
+    
+    const storedLanguage = localStorage.getItem('skillforge-language');
+    if (storedLanguage && SUPPORTED_LANGUAGES.find(lang => lang.code === storedLanguage)) {
+      return storedLanguage;
+    }
+    
+    return getBrowserLanguage();
+  };
 
-    const initializeLanguage = async () => {
-      let initialLanguage = DEFAULT_LANGUAGE;
-      
-      if (user?.preferences?.language) {
-        initialLanguage = user.preferences.language;
-      } else {
-        initialLanguage = getBrowserLanguage();
-      }
+  const [currentLanguage, setCurrentLanguage] = useState<string>(getInitialLanguage);
+  const [currentTranslations, setCurrentTranslations] = useState<any>(
+    () => getTranslations(getInitialLanguage())
+  );
 
-      setCurrentLanguage(initialLanguage);
-      const translations = await loadTranslations(initialLanguage);
-      setCurrentTranslations(translations);
-    };
-
-    initializeLanguage();
-  }, [user]);
+  // Update language when user changes
+  useEffect(() => {
+    if (user?.preferences?.language && user.preferences.language !== currentLanguage) {
+      const newLanguage = user.preferences.language;
+      setCurrentLanguage(newLanguage);
+      setCurrentTranslations(getTranslations(newLanguage));
+    }
+  }, [user?.preferences?.language, currentLanguage]);
 
   const setLanguage = async (languageCode: string) => {
     // Validate language code
@@ -89,8 +85,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
     setCurrentLanguage(languageCode);
     
-    // Load new translations
-    const newTranslations = await loadTranslations(languageCode);
+    // Get new translations synchronously
+    const newTranslations = getTranslations(languageCode);
     setCurrentTranslations(newTranslations);
 
     // Update user preferences if authenticated
@@ -113,12 +109,38 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     }
   };
 
-  // Translation function
+  // Translation function with nested object support
   const t = (key: string, params?: Record<string, string>): string => {
-    let translation = currentTranslations[key] || key;
+    // Fallback to default language if current translations are empty
+    const activeTranslations = currentTranslations && typeof currentTranslations === 'object' 
+      ? currentTranslations 
+      : getTranslations(DEFAULT_LANGUAGE);
+    
+    // Handle nested keys like 'common.loading'
+    let translation: any = activeTranslations;
+    const keys = key.split('.');
+    
+    for (const k of keys) {
+      if (translation && typeof translation === 'object') {
+        translation = translation[k];
+      } else {
+        translation = undefined;
+        break;
+      }
+    }
+    
+    // Final fallback to key itself if translation not found
+    if (translation === undefined || translation === null) {
+      translation = key;
+    }
+    
+    // Ensure we have a string
+    if (typeof translation !== 'string') {
+      translation = key;
+    }
     
     // Replace parameters in translation
-    if (params) {
+    if (params && typeof translation === 'string') {
       Object.entries(params).forEach(([param, value]) => {
         translation = translation.replace(`{{${param}}}`, value);
       });

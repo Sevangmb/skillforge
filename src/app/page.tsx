@@ -49,29 +49,31 @@ export default function Home() {
   if (!user) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-headline text-primary">
-              {t('auth.welcomeTitle')}
-            </CardTitle>
-            <CardDescription>
-              {t('auth.welcomeDescription')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => setShowAuthModal(true)} 
-              className="w-full"
-              size="lg"
-            >
-              {t('auth.getStarted')}
-            </Button>
-          </CardContent>
-        </Card>
-        <AuthModal 
-          isOpen={showAuthModal} 
-          onClose={() => setShowAuthModal(false)} 
-        />
+        <div className="w-full max-w-4xl">
+          <Card className="w-full max-w-md mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-headline text-primary">
+                {t('auth.welcomeTitle')}
+              </CardTitle>
+              <CardDescription>
+                {t('auth.welcomeDescription')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => setShowAuthModal(true)} 
+                className="w-full"
+                size="lg"
+              >
+                {t('auth.getStarted')}
+              </Button>
+            </CardContent>
+          </Card>
+          <AuthModal 
+            isOpen={showAuthModal} 
+            onClose={() => setShowAuthModal(false)} 
+          />
+        </div>
       </main>
     );
   }

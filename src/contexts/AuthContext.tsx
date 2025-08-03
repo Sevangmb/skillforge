@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
-import { onAuthStateChange, getUserProfile } from '@/lib/auth';
+import { onAuthStateChange, getUserProfile, createUserProfile } from '@/lib/auth';
 import type { User } from '@/lib/types';
 
 interface AuthContextType {
@@ -64,7 +64,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (firebaseUser) {
         try {
-          const userProfile = await getUserProfile(firebaseUser.uid);
+          let userProfile = await getUserProfile(firebaseUser.uid);
+          
+          // Si le profil n'existe pas, créer un nouveau profil
+          if (!userProfile) {
+            console.log('User profile not found, creating new profile for:', firebaseUser.email);
+            userProfile = await createUserProfile(firebaseUser);
+          }
+          
           setUser(userProfile);
           setError(null);
         } catch (err) {

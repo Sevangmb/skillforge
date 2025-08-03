@@ -1,5 +1,6 @@
 import { SidebarTrigger } from "./ui/sidebar";
 import AuthButton from "./auth/AuthButton";
+import AdminButton from "./admin/AdminButton";
 
 export default function Header() {
   return (
@@ -9,6 +10,7 @@ export default function Header() {
          <h1 className="text-2xl font-bold font-headline text-primary">SkillForge AI</h1>
       </div>
       <div className="flex items-center gap-4">
+        <AdminButton />
         <AuthButton />
       </div>
     </header>
