@@ -6,15 +6,11 @@ import {
   signOut,
   onAuthStateChanged,
   User as FirebaseUser,
-  GoogleAuthProvider,
-  signInWithPopup,
   updateProfile
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import type { User } from './types';
-
-const googleProvider = new GoogleAuthProvider();
 
 export interface AuthError {
   code: string;
@@ -127,24 +123,6 @@ export const signInWithEmail = async (email: string, password: string) => {
   }
 };
 
-// Sign in with Google
-export const signInWithGoogle = async () => {
-  try {
-    if (!auth) {
-      throw new Error('Firebase Auth is not initialized');
-    }
-    
-    const result = await signInWithPopup(auth, googleProvider);
-    const user = result.user;
-    
-    // Create or update user profile in Firestore
-    await createUserProfile(user);
-    
-    return { user, error: null };
-  } catch (error: any) {
-    return { user: null, error: error as AuthError };
-  }
-};
 
 // Sign out
 export const logOut = async () => {

@@ -34,8 +34,6 @@
     "enterName": "Enter your name",
     "enterEmail": "Enter your email",
     "enterPassword": "Enter your password",
-    "orContinueWith": "Or continue with",
-    "google": "Google",
     "emailAlreadyInUse": "This email is already registered. Try signing in instead.",
     "weakPassword": "Password should be at least 6 characters long.",
     "invalidEmail": "Please enter a valid email address.",

@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
-import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '@/lib/auth';
-import { Loader2, Mail } from 'lucide-react';
+import { signInWithEmail, signUpWithEmail } from '@/lib/auth';
+import { Loader2 } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -49,24 +48,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
-  const handleGoogleAuth = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await signInWithGoogle();
-      if (result.error) {
-        setError(getErrorMessage(result.error.code));
-      } else {
-        onClose();
-        resetForm();
-      }
-    } catch (err) {
-      setError('Failed to sign in with Google');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const resetForm = () => {
     setEmail('');
@@ -155,32 +136,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               {mode === 'signin' ? 'Sign In' : 'Create Account'}
             </Button>
           </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleAuth}
-            disabled={loading}
-          >
-            {loading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Mail className="mr-2 h-4 w-4" />
-            )}
-            Google
-          </Button>
 
           <div className="text-center text-sm">
             {mode === 'signin' ? (

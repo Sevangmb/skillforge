@@ -34,8 +34,6 @@
     "enterName": "Entrez votre nom",
     "enterEmail": "Entrez votre email",
     "enterPassword": "Entrez votre mot de passe",
-    "orContinueWith": "Ou continuer avec",
-    "google": "Google",
     "emailAlreadyInUse": "Cet email est déjà enregistré. Essayez de vous connecter à la place.",
     "weakPassword": "Le mot de passe doit contenir au moins 6 caractères.",
     "invalidEmail": "Veuillez entrer une adresse email valide.",
