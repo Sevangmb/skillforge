@@ -1,4 +1,5 @@
 import { SidebarTrigger } from "./ui/sidebar";
+import AuthButton from "./auth/AuthButton";
 
 export default function Header() {
   return (
@@ -7,7 +8,9 @@ export default function Header() {
          <SidebarTrigger className="md:hidden" />
          <h1 className="text-2xl font-bold font-headline text-primary">SkillForge AI</h1>
       </div>
-       {/* Future home for view mode controls */}
+      <div className="flex items-center gap-4">
+        <AuthButton />
+      </div>
     </header>
   );
 }
