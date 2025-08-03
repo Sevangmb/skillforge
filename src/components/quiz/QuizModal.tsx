@@ -5,13 +5,13 @@ import type { Skill, User, QuizQuestion } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { generateQuizQuestionAction, updateUserProgressAction } from "@/app/actions";
+import { generateQuizQuestionAction, updateUserProgressAction, generateExplanationAction } from "@/app/actions";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2, Sparkles } from "lucide-react";
 
 interface QuizModalProps {
   isOpen: boolean;
@@ -31,6 +31,9 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState(false);
+
   const { toast } = useToast();
   const { currentLanguage } = useLanguage();
   const { refreshUser } = useAuth();
@@ -44,6 +47,7 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
     setSelectedAnswer(null);
     setIsAnswered(false);
     setTimeLeft(TIMER_DURATION);
+    setAiExplanation(null);
 
     try {
       const result = await generateQuizQuestionAction({
@@ -126,9 +130,24 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
     } else {
        toast({
         title: "Incorrect",
-        description: "Don't worry, here's an explanation.",
+        description: "Generating a personalized explanation...",
         variant: "destructive"
       });
+      // Generate AI explanation for incorrect answer
+      setExplanationLoading(true);
+      try {
+        const result = await generateExplanationAction({
+          topic: skill!.name,
+          question: question!.question,
+          answer: question!.options[optionIndex],
+          correctAnswer: question!.options[question!.correctAnswer],
+        });
+        setAiExplanation(result.explanation);
+      } catch (e) {
+        setAiExplanation("Sorry, I couldn't generate an explanation right now.");
+      } finally {
+        setExplanationLoading(false);
+      }
     }
   };
 
@@ -201,7 +220,20 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
                     <div>
                       <h4 className="font-bold">Incorrect</h4>
                        <p className="text-sm text-foreground/80">The correct answer was: <strong>{question.options[question.correctAnswer]}</strong></p>
-                      <p className="text-sm text-foreground/80 mt-2">{question.explanation}</p>
+                       <div className="mt-2 text-sm text-foreground/80">
+                         {explanationLoading && (
+                           <div className="flex items-center gap-2">
+                             <Loader2 className="h-4 w-4 animate-spin"/>
+                             <span>Generating explanation...</span>
+                           </div>
+                         )}
+                         {aiExplanation && (
+                           <div className="flex items-start gap-2">
+                             <Sparkles className="h-4 w-4 text-primary flex-shrink-0 mt-1"/>
+                             <p>{aiExplanation}</p>
+                           </div>
+                         )}
+                       </div>
                     </div>
                   </div>
                )}
@@ -211,7 +243,7 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Close</Button>
           <Button onClick={fetchQuestion} disabled={loading || saving}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {(saving || explanationLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isAnswered ? "Next Question" : "Skip"}
           </Button>
         </DialogFooter>

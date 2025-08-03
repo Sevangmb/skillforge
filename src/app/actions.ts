@@ -1,11 +1,14 @@
 "use server";
 
 import { generateQuizQuestion, type GenerateQuizQuestionInput, type GenerateQuizQuestionOutput } from "@/ai/flows/generate-quiz-question";
+import { generateExplanation, type GenerateExplanationInput, type GenerateExplanationOutput } from "@/ai/flows/generate-explanation";
 import { getUserProfile, updateUserProfile } from "@/lib/auth";
 import type { User, CompetenceStatus } from "@/lib/types";
 import { ZodError } from "zod";
 
 export type { GenerateQuizQuestionInput, GenerateQuizQuestionOutput };
+export type { GenerateExplanationInput, GenerateExplanationOutput };
+
 
 export async function generateQuizQuestionAction(input: GenerateQuizQuestionInput): Promise<GenerateQuizQuestionOutput> {
   try {
@@ -20,6 +23,21 @@ export async function generateQuizQuestionAction(input: GenerateQuizQuestionInpu
     throw new Error("Failed to generate quiz question.");
   }
 }
+
+export async function generateExplanationAction(input: GenerateExplanationInput): Promise<GenerateExplanationOutput> {
+  try {
+    const result = await generateExplanation(input);
+    return result;
+  } catch (error) {
+    if (error instanceof ZodError) {
+      console.error("Validation error calling Genkit flow:", error.errors);
+      throw new Error("AI response validation failed.");
+    }
+    console.error("Error calling Genkit flow:", error);
+    throw new Error("Failed to generate explanation.");
+  }
+}
+
 
 export type UpdateUserProgressInput = {
   userId: string;
