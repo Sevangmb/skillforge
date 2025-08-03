@@ -8,16 +8,20 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import Header from "@/components/Header";
 
 export default function AdminPage() {
-  const { user, loading } = useAuth();
+  const { firebaseUser, user, loading } = useAuth();
   const router = useRouter();
 
+  // Determine admin status reliably
+  const isAdmin = user?.profile.isAdmin || firebaseUser?.email === 'sevans@hotmail.fr';
+
   useEffect(() => {
-    if (!loading && !user?.profile.isAdmin) {
+    // Redirect if not loading and not an admin
+    if (!loading && !isAdmin) {
       router.push('/');
     }
-  }, [user, loading, router]);
+  }, [isAdmin, loading, router]);
 
-  if (loading || !user?.profile.isAdmin) {
+  if (loading || !isAdmin) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
@@ -43,7 +47,7 @@ export default function AdminPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Bienvenue dans le panneau d'administration, {user.profile.displayName}.</p>
+            <p>Bienvenue dans le panneau d'administration, {user?.profile.displayName || firebaseUser?.email}.</p>
             <p className="mt-4 text-muted-foreground">
               D'autres fonctionnalités de gestion seront bientôt disponibles ici.
             </p>

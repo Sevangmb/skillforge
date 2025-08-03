@@ -55,7 +55,7 @@ export default function AuthButton() {
     .toUpperCase()
     .slice(0, 2);
 
-  // Hard-coded check for admin user to ensure reliability
+  // Reliable admin check
   const isAdmin = user.profile.isAdmin || firebaseUser.email === 'sevans@hotmail.fr';
 
   return (
