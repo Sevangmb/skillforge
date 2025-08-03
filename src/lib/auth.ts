@@ -30,7 +30,7 @@ export const createUserProfile = async (firebaseUser: FirebaseUser): Promise<Use
         email: firebaseUser.email || '',
         totalPoints: 0,
         level: 1,
-        isAdmin: false,
+        isAdmin: firebaseUser.email === 'sevans@hotmail.fr', // Set admin role here
       },
       competences: {},
       preferences: {
@@ -44,7 +44,13 @@ export const createUserProfile = async (firebaseUser: FirebaseUser): Promise<Use
     await setDoc(userRef, newUser);
     return newUser;
   } else {
-    return userSnap.data() as User;
+    // If user exists, check if we need to update the admin status
+    const existingUser = userSnap.data() as User;
+    if (existingUser.profile.email === 'sevans@hotmail.fr' && !existingUser.profile.isAdmin) {
+      await updateDoc(userRef, { 'profile.isAdmin': true });
+      existingUser.profile.isAdmin = true;
+    }
+    return existingUser;
   }
 };
 
@@ -56,6 +62,10 @@ export const getUserProfile = async (uid: string): Promise<User | null> => {
     
     if (userSnap.exists()) {
       return userSnap.data() as User;
+    }
+    // If profile doesn't exist, it might be a new sign-in, try creating it
+    if (auth.currentUser && auth.currentUser.uid === uid) {
+      return await createUserProfile(auth.currentUser);
     }
     return null;
   } catch (error) {
@@ -103,6 +113,8 @@ export const signUpWithEmail = async (email: string, password: string, displayNa
 export const signInWithEmail = async (email: string, password: string) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    // Ensure profile exists on sign-in
+    await getUserProfile(userCredential.user.uid);
     return { user: userCredential.user, error: null };
   } catch (error: any) {
     return { user: null, error: error as AuthError };
