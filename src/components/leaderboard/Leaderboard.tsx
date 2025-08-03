@@ -18,34 +18,36 @@ export default function Leaderboard({ users }: LeaderboardProps) {
   return (
     <div className="p-2">
       <h2 className="text-lg font-headline text-primary mb-2 px-2">Leaderboard</h2>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-10">Rank</TableHead>
-            <TableHead>User</TableHead>
-            <TableHead className="text-right">Points</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user, index) => (
-            <TableRow key={user.id}>
-              <TableCell className="font-medium">
-                <RankIcon rank={index} />
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                     <AvatarImage src={`https://placehold.co/80x80.png`} data-ai-hint="profile avatar" />
-                    <AvatarFallback>{user.profile.displayName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <span className="truncate">{user.profile.displayName}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-right">{user.profile.totalPoints.toLocaleString()}</TableCell>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]">Rank</TableHead>
+              <TableHead>User</TableHead>
+              <TableHead className="text-right">Points</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {users.map((user, index) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">
+                  <RankIcon rank={index} />
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={`https://placehold.co/80x80.png`} data-ai-hint="profile avatar" />
+                      <AvatarFallback>{user.profile.displayName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <span className="truncate max-w-[100px]">{user.profile.displayName}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">{user.profile.totalPoints.toLocaleString()}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

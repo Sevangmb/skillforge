@@ -3,7 +3,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Dashboard from "@/components/dashboard/Dashboard";
-import { getSkillTree, getUsers } from "@/data/mock-data";
 import AuthModal from "@/components/auth/AuthModal";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,14 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 export default function Home() {
-  const { user, loading } = useAuth();
-  const { t } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
+  const { t, loadingTranslations } = useLanguage();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
 
   // Detect when user just logged in
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !authLoading) {
       setIsFirstLogin(true);
       // Remove the flag after animation
       const timer = setTimeout(() => {
@@ -26,13 +25,11 @@ export default function Home() {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [user, loading]);
+  }, [user, authLoading]);
 
-  // Mock data for now - in real app, this would come from Firestore
-  const skills = getSkillTree();
-  const users = getUsers();
+  const isLoading = authLoading || loadingTranslations;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
@@ -93,7 +90,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background animate-in fade-in duration-500">
-      <Dashboard skills={skills} users={[user, ...users]} currentUser={user} />
+      <Dashboard currentUser={user} />
     </main>
   );
 }

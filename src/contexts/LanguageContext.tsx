@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { updateUserProfile } from '@/lib/auth';
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE, getBrowserLanguage } from '@/lib/i18n';
@@ -15,6 +15,7 @@ interface LanguageContextType {
   supportedLanguages: Language[];
   setLanguage: (languageCode: string) => Promise<void>;
   t: (key: string, params?: Record<string, string>) => string;
+  loadingTranslations: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -44,7 +45,10 @@ const getTranslations = (languageCode: string): any => {
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const { user, firebaseUser } = useAuth();
-  
+  const [currentLanguage, setCurrentLanguage] = useState<string>(DEFAULT_LANGUAGE);
+  const [currentTranslations, setCurrentTranslations] = useState<any>({});
+  const [loadingTranslations, setLoadingTranslations] = useState(true);
+
   // Initialize with proper language and translations immediately
   const getInitialLanguage = (): string => {
     if (typeof window === 'undefined') return DEFAULT_LANGUAGE;
@@ -61,35 +65,21 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     return getBrowserLanguage();
   };
 
-  const [currentLanguage, setCurrentLanguage] = useState<string>(getInitialLanguage);
-  const [currentTranslations, setCurrentTranslations] = useState<any>(
-    () => getTranslations(getInitialLanguage())
-  );
-
-  // Update language when user changes
-  useEffect(() => {
-    if (user?.preferences?.language && user.preferences.language !== currentLanguage) {
-      const newLanguage = user.preferences.language;
-      setCurrentLanguage(newLanguage);
-      setCurrentTranslations(getTranslations(newLanguage));
-    }
-  }, [user?.preferences?.language, currentLanguage]);
-
-  const setLanguage = async (languageCode: string) => {
-    // Validate language code
+  const setLanguage = useCallback(async (languageCode: string) => {
     const isSupported = SUPPORTED_LANGUAGES.some(lang => lang.code === languageCode);
     if (!isSupported) {
       console.error(`Language ${languageCode} is not supported`);
       return;
     }
 
+    setLoadingTranslations(true);
     setCurrentLanguage(languageCode);
     
     // Get new translations synchronously
     const newTranslations = getTranslations(languageCode);
     setCurrentTranslations(newTranslations);
+    setLoadingTranslations(false);
 
-    // Update user preferences if authenticated
     if (firebaseUser && user) {
       try {
         await updateUserProfile(firebaseUser.uid, {
@@ -103,14 +93,26 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       }
     }
 
-    // Store in localStorage for non-authenticated users
     if (typeof window !== 'undefined') {
       localStorage.setItem('skillforge-language', languageCode);
     }
-  };
+  }, [user, firebaseUser]);
+
+  // Initialize language and translations
+  useEffect(() => {
+    const initialLanguage = getInitialLanguage();
+    setCurrentLanguage(initialLanguage);
+    setCurrentTranslations(getTranslations(initialLanguage));
+    setLoadingTranslations(false);
+  }, [user?.preferences?.language]);
 
   // Translation function with nested object support
   const t = (key: string, params?: Record<string, string>): string => {
+    if (loadingTranslations) {
+      // Return a placeholder or empty string while loading
+      return key.split('.').pop() || '';
+    }
+
     // Fallback to default language if current translations are empty
     const activeTranslations = currentTranslations && typeof currentTranslations === 'object' 
       ? currentTranslations 
@@ -142,7 +144,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     // Replace parameters in translation
     if (params && typeof translation === 'string') {
       Object.entries(params).forEach(([param, value]) => {
-        translation = translation.replace(`{{${param}}}`, value);
+        translation = translation.replace(new RegExp(`{{${param}}}`, 'g'), value);
       });
     }
     
@@ -157,6 +159,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     supportedLanguages: SUPPORTED_LANGUAGES,
     setLanguage,
     t,
+    loadingTranslations,
   };
 
   return (

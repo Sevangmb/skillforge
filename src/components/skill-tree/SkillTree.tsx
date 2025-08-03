@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, MouseEvent, WheelEvent, useMemo } from 'react';
@@ -35,8 +36,24 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
     skills.forEach(skill => map.set(skill.id, skill));
     return map;
   }, [skills]);
+  
+  const visibleSkills = useMemo(() => {
+    const completedSkillIds = new Set(Object.keys(user.competences).filter(id => user.competences[id].completed));
+    return skills.filter(skill => {
+        if (!skill.prereqs || skill.prereqs.length === 0) {
+            return true; // Always show skills with no prerequisites
+        }
+        return skill.prereqs.every(prereqId => completedSkillIds.has(prereqId));
+    });
+  }, [skills, user.competences]);
+
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    // Prevent panning when clicking on a skill node
+    if (target.closest('[data-skill-node="true"]')) {
+      return;
+    }
     setIsPanning(true);
     lastPanPoint.current = { x: e.pageX, y: e.pageY };
     e.currentTarget.style.cursor = 'grabbing';
@@ -48,8 +65,10 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   };
   
   const handleMouseLeave = (e: MouseEvent<HTMLDivElement>) => {
-    setIsPanning(false);
-    e.currentTarget.style.cursor = 'grab';
+    if (isPanning) {
+      setIsPanning(false);
+      e.currentTarget.style.cursor = 'grab';
+    }
   };
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
@@ -64,9 +83,8 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
     e.preventDefault();
     const scaleAmount = e.deltaY > 0 ? -0.1 : 0.1;
     let newScale = view.scale + scaleAmount;
-    newScale = Math.min(Math.max(0.3, newScale), 1.5);
+    newScale = Math.min(Math.max(0.3, 1.5), newScale);
     
-    // Zoom towards cursor
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
 
@@ -79,11 +97,13 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
     setView({ scale: newScale, x: newX, y: newY });
   };
   
-
   const getStatus = (skill: Skill) => {
-    if (user.competences[skill.id]?.completed) return 'completed';
-    const prereqsMet = skill.prereqs.every(id => user.competences[id]?.completed);
+    const competence = user.competences[skill.id];
+    if (competence?.completed) return 'completed';
+    
+    const prereqsMet = !skill.prereqs || skill.prereqs.every(id => user.competences[id]?.completed);
     if (prereqsMet) return 'available';
+
     return skill.isSecret ? 'secret' : 'locked';
   }
 
@@ -102,7 +122,7 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
         className="absolute top-0 left-0 transition-transform duration-100 ease-linear"
         style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}
       >
-        <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ width: 2000, height: 1000 }}>
+        <svg width="2000" height="1200" className="absolute top-0 left-0 pointer-events-none">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
                 markerWidth="6" markerHeight="6"
@@ -110,22 +130,23 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
               <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--border))" />
             </marker>
           </defs>
-          {skills.map(skill => (
+          {visibleSkills.map(skill => (
             skill.prereqs.map(prereqId => {
               const prereqSkill = skillMap.get(prereqId);
-              if (!prereqSkill) return null;
+              if (!prereqSkill || !visibleSkills.find(s => s.id === prereqId)) return null;
               return <SkillConnection key={`${prereqId}-${skill.id}`} from={prereqSkill} to={skill} />;
             })
           ))}
         </svg>
 
-        {skills.map(skill => (
-          <SkillNode
-            key={skill.id}
-            skill={skill}
-            status={getStatus(skill)}
-            onClick={() => onNodeClick(skill)}
-          />
+        {visibleSkills.map(skill => (
+           <div key={skill.id} data-skill-node="true">
+              <SkillNode
+                skill={skill}
+                status={getStatus(skill)}
+                onClick={() => onNodeClick(skill)}
+              />
+            </div>
         ))}
       </div>
     </div>

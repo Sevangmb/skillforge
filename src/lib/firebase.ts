@@ -24,15 +24,6 @@ if (missingEnvVars.length > 0) {
   console.error('Missing required Firebase environment variables:', missingEnvVars);
 }
 
-// Validate configuration in development only
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  console.log('🔥 Firebase initialized:', {
-    hasApiKey: !!firebaseConfig.apiKey,
-    hasAuthDomain: !!firebaseConfig.authDomain,
-    hasProjectId: !!firebaseConfig.projectId
-  });
-}
-
 // Check if we're in a browser environment and have valid config
 const isValidConfig = typeof window !== 'undefined' && 
   firebaseConfig.apiKey && 
@@ -51,5 +42,14 @@ if (isValidConfig) {
 // Initialize Firebase services with null checks
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
+
+// Validate configuration in development only
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  if (isValidConfig) {
+    console.log('🔥 Firebase initialized successfully');
+  } else {
+    console.log('🔥 Firebase not initialized - missing config');
+  }
+}
 
 export default app;
