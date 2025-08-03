@@ -61,13 +61,19 @@ A Next.js application that gamifies learning through an interactive skill tree w
    NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
    GOOGLE_AI_API_KEY=your_google_ai_api_key
    ```
-
-4. **Run the development server**
+   
+4. **Seed the database (IMPORTANT)**
+   This step is crucial to initialize the first skill in your skill tree.
+   ```bash
+   npm run db:seed
+   ```
+   
+5. **Run the development server**
    ```bash
    npm run dev
    ```
 
-5. **Open your browser**
+6. **Open your browser**
    Navigate to [http://localhost:9002](http://localhost:9002)
 
 ## 🛠️ Technology Stack
