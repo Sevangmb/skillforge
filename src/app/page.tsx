@@ -3,7 +3,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Dashboard from "@/components/dashboard/Dashboard";
-import { getSkillTree, getUsers } from "@/data/mock-data";
 import AuthModal from "@/components/auth/AuthModal";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,10 +26,6 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, [user, loading]);
-
-  // Mock data for now - in real app, this would come from Firestore
-  const skills = getSkillTree();
-  const users = getUsers();
 
   if (loading) {
     return (
@@ -91,7 +86,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background animate-in fade-in duration-500">
-      <Dashboard skills={skills} users={[user, ...users]} currentUser={user} />
+      <Dashboard currentUser={user} />
     </main>
   );
 }
