@@ -9,6 +9,7 @@ import { generateQuizQuestionAction } from "@/app/actions";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { AlertCircle, CheckCircle } from "lucide-react";
 
 interface QuizModalProps {
@@ -28,6 +29,7 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const { toast } = useToast();
+  const { currentLanguage } = useLanguage();
 
   const fetchQuestion = useCallback(async () => {
     if (!skill || !user) return;
@@ -45,6 +47,7 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
         userId: user.id,
         userLevel: user.competences[skill.id]?.level || 0,
         learningStyle: user.preferences.learningStyle,
+        language: currentLanguage,
       });
       setQuestion(result);
     } catch (err) {
@@ -57,7 +60,7 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
     } finally {
       setLoading(false);
     }
-  }, [skill, user, toast]);
+  }, [skill, user, toast, currentLanguage]);
 
   useEffect(() => {
     if (isOpen) {

@@ -2,10 +2,11 @@
 import type { Skill, User } from "@/lib/types";
 
 const skills: Skill[] = [
-  { id: 'html', name: 'HTML Basics', description: 'Learn the foundation of the web.', icon: 'Code', cost: 10, category: 'Web Basics', position: { x: 50, y: 300 }, prereqs: [], level: 1, isSecret: false },
-  { id: 'css', name: 'CSS Styling', description: 'Make your websites look beautiful.', icon: 'Code', cost: 15, category: 'Web Basics', position: { x: 250, y: 300 }, prereqs: ['html'], level: 1, isSecret: false },
-  { id: 'js_basics', name: 'JavaScript Basics', description: 'Add interactivity to your pages.', icon: 'Code', cost: 20, category: 'Programming', position: { x: 450, y: 300 }, prereqs: ['html', 'css'], level: 1, isSecret: false },
-  { id: 'git', name: 'Git & GitHub', description: 'Version control for your projects.', icon: 'GitBranch', cost: 25, category: 'Tools', position: { x: 250, y: 500 }, prereqs: ['html'], level: 1, isSecret: false },
+  { id: 'programmation', name: 'Programmation', description: 'Logique, algorithmes et langages.', icon: 'Code', cost: 0, category: 'Tech', position: { x: 50, y: 150 }, prereqs: [], level: 1, isSecret: false },
+  { id: 'maths', name: 'Mathématiques', description: 'Nombres, structures et formes.', icon: 'Cpu', cost: 0, category: 'Sciences', position: { x: 250, y: 150 }, prereqs: [], level: 1, isSecret: false },
+  { id: 'geographie', name: 'Géographie', description: 'Cartes, pays et paysages.', icon: 'Cloud', cost: 0, category: 'Culture', position: { x: 450, y: 150 }, prereqs: [], level: 1, isSecret: false },
+  { id: 'cuisine', name: 'Cuisine', description: 'Recettes, techniques et saveurs.', icon: 'Database', cost: 0, category: 'Arts', position: { x: 150, y: 350 }, prereqs: [], level: 1, isSecret: false },
+  { id: 'francais', name: 'Français', description: 'Grammaire, orthographe et littérature.', icon: 'GitBranch', cost: 0, category: 'Langues', position: { x: 350, y: 350 }, prereqs: [], level: 1, isSecret: false },
 ];
 
 const users: User[] = [
@@ -13,11 +14,9 @@ const users: User[] = [
     id: 'user1',
     profile: { displayName: 'Alex Nova', email: 'alex@example.com', totalPoints: 1250, level: 15 },
     competences: {
-      'html': { level: 100, completed: true },
-      'css': { level: 100, completed: true },
-      'js_basics': { level: 80, completed: false },
+      'programmation': { level: 10, completed: false },
     },
-    preferences: { learningStyle: 'Visual', favoriteTopics: ['Frontend', 'AI'], adaptiveMode: 'Focus', language: 'en' }
+    preferences: { learningStyle: 'Visual', favoriteTopics: ['Frontend', 'AI'], adaptiveMode: 'Focus', language: 'fr' }
   },
   {
     id: 'user2',
@@ -29,7 +28,7 @@ const users: User[] = [
     id: 'user3',
     profile: { displayName: 'DataDiva', email: 'data@example.com', totalPoints: 1500, level: 18 },
     competences: {},
-    preferences: { learningStyle: 'Auditory', favoriteTopics: ['Databases', 'AI'], adaptiveMode: 'Objective', language: 'en' }
+    preferences: { learningStyle: 'Auditory', favoriteTopics: ['Databases', 'AI'], adaptiveMode: 'Objective', language: 'es' }
   }
 ];
 

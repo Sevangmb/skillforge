@@ -16,6 +16,7 @@ const GenerateQuizQuestionInputSchema = z.object({
   userId: z.string().describe('The ID of the user for whom to generate the question.'),
   userLevel: z.number().describe('The user level (0-100) in the specified competence.'),
   learningStyle: z.string().describe('The learning style of the user.'),
+  language: z.string().describe("The user's preferred language (e.g., 'en', 'fr')."),
 });
 export type GenerateQuizQuestionInput = z.infer<typeof GenerateQuizQuestionInputSchema>;
 
@@ -35,10 +36,12 @@ const generateQuizQuestionPrompt = ai.definePrompt({
   name: 'generateQuizQuestionPrompt',
   input: {schema: GenerateQuizQuestionInputSchema},
   output: {schema: GenerateQuizQuestionOutputSchema},
-  prompt: `Génère une question éducative pour:
+  prompt: `Génère une question éducative dans la langue "{{language}}".
     - Compétence: {{{competenceId}}}
     - Niveau utilisateur: {{{userLevel}}}/100
     - Style d'apprentissage: {{{learningStyle}}}
+
+    La question, les options et l'explication doivent être en {{language}}.
 
     Format JSON requis:
     {

@@ -9,6 +9,7 @@ export type GenerateQuizQuestionInput = {
   userId: string;
   userLevel: number;
   learningStyle: string;
+  language: string;
 };
 
 export type GenerateQuizQuestionOutput = {
@@ -21,6 +22,21 @@ export type GenerateQuizQuestionOutput = {
 export async function generateQuizQuestionAction(input: GenerateQuizQuestionInput): Promise<GenerateQuizQuestionOutput> {
   // Temporarily return mock data for static export
   // TODO: Implement proper API routes for AI functionality
+  
+  if (input.language === 'fr') {
+    return {
+      question: `Quel est le but principal de HTML dans le développement web?`,
+      options: [
+        "Définir la structure et le contenu d'une page web.",
+        "Styliser la présentation visuelle d'une page web.",
+        "Gérer les interactions utilisateur et le contenu dynamique.",
+        "Gérer la logique côté serveur et les bases de données."
+      ],
+      correctAnswer: 0,
+      explanation: "HTML (HyperText Markup Language) est le langage de balisage standard pour les documents conçus pour être affichés dans un navigateur web. Il fournit la structure fondamentale des pages web."
+    };
+  }
+
   return {
     question: `What is the core purpose of HTML in web development?`,
     options: [
