@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, MouseEvent, WheelEvent, useMemo } from 'react';
+import { useState, useRef, MouseEvent, WheelEvent, useMemo, useEffect } from 'react';
 import type { Skill, User } from '@/lib/types';
 import SkillNode from './SkillNode';
 import SkillConnection from './SkillConnection';
@@ -37,9 +37,6 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   }, [skills]);
   
   const visibleSkills = useMemo(() => {
-    const visible = new Set<string>();
-    
-    // First, find all completed skills
     const completedSkills = new Set<string>();
     Object.entries(user.competences).forEach(([skillId, status]) => {
       if (status.completed) {
@@ -47,7 +44,6 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
       }
     });
 
-    // A skill is visible if it has no prerequisites, OR if all its prerequisites are completed.
     return skills.filter(skill => {
         if (!skill.prereqs || skill.prereqs.length === 0) {
             return true;
@@ -59,8 +55,7 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    // Allow panning only when clicking on the background, not on a skill node.
-    if (target.closest('.skill-node-container')) {
+    if (target.closest('[data-skill-node="true"]')) {
       return;
     }
     setIsPanning(true);
@@ -131,7 +126,7 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
         className="absolute top-0 left-0 transition-transform duration-100 ease-linear"
         style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}
       >
-        <svg width="2000" height="1000" className="absolute top-0 left-0 pointer-events-none">
+        <svg width="2000" height="1200" className="absolute top-0 left-0 pointer-events-none">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
                 markerWidth="6" markerHeight="6"
@@ -149,7 +144,7 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
         </svg>
 
         {visibleSkills.map(skill => (
-           <div key={skill.id} className="skill-node-container" data-skill-node="true">
+           <div key={skill.id} data-skill-node="true">
               <SkillNode
                 skill={skill}
                 status={getStatus(skill)}

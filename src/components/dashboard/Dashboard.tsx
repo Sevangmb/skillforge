@@ -30,20 +30,24 @@ export default function Dashboard({ currentUser }: DashboardProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSkills = async () => {
+    const fetchSkillsAndSubscribe = async () => {
       setLoading(true);
       const skillsFromDb = await getSkillsFromFirestore();
       setSkills(skillsFromDb);
       setLoading(false);
+
+      const unsubscribe = subscribeToLeaderboard((leaderboardUsers) => {
+        setUsers(leaderboardUsers);
+      });
+
+      return () => unsubscribe();
     };
 
-    fetchSkills();
+    const unsubscribePromise = fetchSkillsAndSubscribe();
 
-    const unsubscribe = subscribeToLeaderboard((leaderboardUsers) => {
-      setUsers(leaderboardUsers);
-    });
-
-    return () => unsubscribe();
+    return () => {
+      unsubscribePromise.then(unsubscribe => unsubscribe && unsubscribe());
+    };
   }, []);
 
   const handleNodeClick = (skill: Skill) => {
