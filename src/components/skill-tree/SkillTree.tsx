@@ -37,15 +37,12 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   }, [skills]);
   
   const visibleSkills = useMemo(() => {
-    // Affiche les compétences si elles n'ont pas de prérequis (comme le nœud de départ)
-    // ou si tous les prérequis sont terminés.
+    // Corrected logic: A skill is visible if it has no prerequisites OR if all its prerequisites are completed.
     return skills.filter(skill => {
-      if (skill.prereqs.length === 0) {
-        return true;
-      }
-      return skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
+        return skill.prereqs.length === 0 || skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
     });
-  }, [skills, user.competences]);
+}, [skills, user.competences]);
+
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     setIsPanning(true);
