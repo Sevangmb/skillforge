@@ -90,21 +90,28 @@ export const updateUserProfile = async (uid: string, updates: Partial<User>): Pr
 // Sign up with email and password
 export const signUpWithEmail = async (email: string, password: string, displayName: string) => {
   try {
+    console.log('Starting sign up with email:', email);
+    
     if (!auth) {
+      console.error('Firebase Auth is not initialized');
       throw new Error('Firebase Auth is not initialized');
     }
     
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
+    console.log('User created successfully:', user.uid);
     
     // Update display name
     await updateProfile(user, { displayName });
+    console.log('Display name updated');
     
     // Create user profile in Firestore
     await createUserProfile(user);
+    console.log('User profile created in Firestore');
     
     return { user, error: null };
   } catch (error: any) {
+    console.error('Sign up error:', error);
     return { user: null, error: error as AuthError };
   }
 };

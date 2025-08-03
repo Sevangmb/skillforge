@@ -36,12 +36,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       }
 
       if (result.error) {
+        console.error('Auth error:', result.error);
         setError(getErrorMessage(result.error.code));
       } else {
         onClose();
         resetForm();
       }
     } catch (err) {
+      console.error('Unexpected auth error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
