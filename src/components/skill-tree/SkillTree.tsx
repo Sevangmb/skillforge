@@ -37,14 +37,13 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   }, [skills]);
   
   const visibleSkills = useMemo(() => {
+    // Affiche les compétences si elles n'ont pas de prérequis (comme le nœud de départ)
+    // ou si tous les prérequis sont terminés.
     return skills.filter(skill => {
-      // Toujours afficher les compétences de niveau 1
-      if (skill.level === 1) {
+      if (skill.prereqs.length === 0) {
         return true;
       }
-      // Afficher les compétences de niveau supérieur uniquement si tous les prérequis sont terminés
-      const prereqsMet = skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
-      return prereqsMet;
+      return skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
     });
   }, [skills, user.competences]);
 
