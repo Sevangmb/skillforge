@@ -30,6 +30,7 @@ export const createUserProfile = async (firebaseUser: FirebaseUser): Promise<Use
         email: firebaseUser.email || '',
         totalPoints: 0,
         level: 1,
+        isAdmin: false,
       },
       competences: {},
       preferences: {

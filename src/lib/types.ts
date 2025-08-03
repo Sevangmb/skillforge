@@ -25,6 +25,7 @@ export type User = {
     email: string;
     totalPoints: number;
     level: number;
+    isAdmin?: boolean;
   };
   competences: Record<string, CompetenceStatus>;
   preferences: {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu, 
@@ -15,7 +16,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { logOut } from '@/lib/auth';
 import AuthModal from './AuthModal';
 import SettingsModal from '@/components/settings/SettingsModal';
-import { User, LogOut, Settings } from 'lucide-react';
+import { User, LogOut, Settings, ShieldCheck } from 'lucide-react';
 
 export default function AuthButton() {
   const { firebaseUser, user, loading } = useAuth();
@@ -83,6 +84,14 @@ export default function AuthButton() {
           <Settings className="mr-2 h-4 w-4" />
           <span>{t('common.settings')}</span>
         </DropdownMenuItem>
+        {user.profile.isAdmin && (
+           <DropdownMenuItem asChild>
+             <Link href="/admin">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                <span>Admin</span>
+             </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
