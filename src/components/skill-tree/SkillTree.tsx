@@ -35,6 +35,18 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
     skills.forEach(skill => map.set(skill.id, skill));
     return map;
   }, [skills]);
+  
+  const visibleSkills = useMemo(() => {
+    return skills.filter(skill => {
+      // Toujours afficher les compétences de niveau 1
+      if (skill.level === 1) {
+        return true;
+      }
+      // Afficher les compétences de niveau supérieur uniquement si tous les prérequis sont terminés
+      const prereqsMet = skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
+      return prereqsMet;
+    });
+  }, [skills, user.competences]);
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     setIsPanning(true);
@@ -110,16 +122,16 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
               <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(var(--border))" />
             </marker>
           </defs>
-          {skills.map(skill => (
+          {visibleSkills.map(skill => (
             skill.prereqs.map(prereqId => {
               const prereqSkill = skillMap.get(prereqId);
-              if (!prereqSkill) return null;
+              if (!prereqSkill || !visibleSkills.find(s => s.id === prereqId)) return null;
               return <SkillConnection key={`${prereqId}-${skill.id}`} from={prereqSkill} to={skill} />;
             })
           ))}
         </svg>
 
-        {skills.map(skill => (
+        {visibleSkills.map(skill => (
           <SkillNode
             key={skill.id}
             skill={skill}
