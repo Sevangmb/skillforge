@@ -31,6 +31,7 @@ export default function Dashboard({ currentUser }: DashboardProps) {
 
   useEffect(() => {
     const fetchSkills = async () => {
+      setLoading(true);
       const skillsFromDb = await getSkillsFromFirestore();
       setSkills(skillsFromDb);
       setLoading(false);
@@ -49,28 +50,17 @@ export default function Dashboard({ currentUser }: DashboardProps) {
     const competence = currentUser.competences[skill.id];
     const isCompleted = competence?.completed;
     
-    let isAvailable = !isCompleted;
-    if (skill.prereqs && skill.prereqs.length > 0) {
-      isAvailable = skill.prereqs.every(prereqId => currentUser.competences[prereqId]?.completed);
+    let isAvailable = false;
+    if (skill.prereqs.length === 0) {
+      isAvailable = true;
     } else {
-      isAvailable = true; // No prerequisites
+      isAvailable = skill.prereqs.every(prereqId => currentUser.competences[prereqId]?.completed);
     }
-
+    
     if (isAvailable && !isCompleted) {
       setSelectedSkill(skill);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading Skill Tree...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <SidebarProvider>
@@ -90,7 +80,16 @@ export default function Dashboard({ currentUser }: DashboardProps) {
         <div className="flex flex-col h-screen">
           <Header />
           <div className="flex-grow relative">
-            <SkillTree skills={skills} user={currentUser} onNodeClick={handleNodeClick} />
+            {loading ? (
+               <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="flex flex-col items-center space-y-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-muted-foreground">Loading Skill Tree...</p>
+                </div>
+              </div>
+            ) : (
+              <SkillTree skills={skills} user={currentUser} onNodeClick={handleNodeClick} />
+            )}
           </div>
         </div>
       </SidebarInset>
