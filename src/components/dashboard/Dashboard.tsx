@@ -81,7 +81,7 @@ export default function Dashboard({ currentUser }: DashboardProps) {
           <Header />
           <div className="flex-grow relative">
             {loading ? (
-               <div className="min-h-screen bg-background flex items-center justify-center">
+               <div className="absolute inset-0 bg-background flex items-center justify-center">
                 <div className="flex flex-col items-center space-y-4">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <p className="text-muted-foreground">Loading Skill Tree...</p>
