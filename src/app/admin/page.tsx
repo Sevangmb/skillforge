@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ShieldCheck } from "lucide-react";
 import Header from "@/components/Header";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 export default function AdminPage() {
   const { firebaseUser, user, loading } = useAuth();
@@ -33,27 +34,29 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="p-4 sm:p-6 lg:p-8">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-6 w-6 text-primary" />
-              <CardTitle className="text-2xl font-headline">Panneau d'Administration</CardTitle>
-            </div>
-            <CardDescription>
-              Gérez les utilisateurs, les compétences et le contenu de l'application.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Bienvenue dans le panneau d'administration, {user?.profile.displayName || firebaseUser?.email}.</p>
-            <p className="mt-4 text-muted-foreground">
-              D'autres fonctionnalités de gestion seront bientôt disponibles ici.
-            </p>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="p-4 sm:p-6 lg:p-8">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-6 w-6 text-primary" />
+                <CardTitle className="text-2xl font-headline">Panneau d'Administration</CardTitle>
+              </div>
+              <CardDescription>
+                Gérez les utilisateurs, les compétences et le contenu de l'application.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Bienvenue dans le panneau d'administration, {user?.profile.displayName || firebaseUser?.email}.</p>
+              <p className="mt-4 text-muted-foreground">
+                D'autres fonctionnalités de gestion seront bientôt disponibles ici.
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    </SidebarProvider>
   );
 }
