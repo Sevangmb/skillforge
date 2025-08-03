@@ -17,6 +17,9 @@ import type { User, Skill } from './types';
 // User operations
 export const saveUserToFirestore = async (user: User): Promise<void> => {
   try {
+    if (!db) {
+      throw new Error('Firestore is not initialized');
+    }
     const userRef = doc(db, 'users', user.id);
     await setDoc(userRef, user, { merge: true });
   } catch (error) {
@@ -31,6 +34,9 @@ export const updateUserProgress = async (
   progress: { level: number; completed: boolean }
 ): Promise<void> => {
   try {
+    if (!db) {
+      throw new Error('Firestore is not initialized');
+    }
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       [`competences.${competenceId}`]: progress
@@ -43,6 +49,9 @@ export const updateUserProgress = async (
 
 export const updateUserPoints = async (userId: string, pointsToAdd: number): Promise<void> => {
   try {
+    if (!db) {
+      throw new Error('Firestore is not initialized');
+    }
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       'profile.totalPoints': pointsToAdd
@@ -56,8 +65,12 @@ export const updateUserPoints = async (userId: string, pointsToAdd: number): Pro
 // Skills operations
 export const saveSkillsToFirestore = async (skills: Skill[]): Promise<void> => {
   try {
+    if (!db) {
+      throw new Error('Firestore is not initialized');
+    }
+    const firestore = db; // TypeScript type narrowing
     const batch = skills.map(async (skill) => {
-      const skillRef = doc(db, 'skills', skill.id);
+      const skillRef = doc(firestore, 'skills', skill.id);
       await setDoc(skillRef, skill);
     });
     await Promise.all(batch);
@@ -69,6 +82,10 @@ export const saveSkillsToFirestore = async (skills: Skill[]): Promise<void> => {
 
 export const getSkillsFromFirestore = async (): Promise<Skill[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore is not initialized');
+      return [];
+    }
     const skillsCol = collection(db, 'skills');
     const skillSnapshot = await getDocs(skillsCol);
     return skillSnapshot.docs.map(doc => doc.data() as Skill);
@@ -81,6 +98,10 @@ export const getSkillsFromFirestore = async (): Promise<Skill[]> => {
 // Leaderboard operations
 export const getLeaderboard = async (limitCount: number = 10): Promise<User[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore is not initialized');
+      return [];
+    }
     const usersCol = collection(db, 'users');
     const leaderboardQuery = query(
       usersCol,
@@ -100,6 +121,10 @@ export const subscribeToUserUpdates = (
   userId: string,
   callback: (user: User | null) => void
 ): (() => void) => {
+  if (!db) {
+    console.warn('Firestore is not initialized');
+    return () => {};
+  }
   const userRef = doc(db, 'users', userId);
   return onSnapshot(userRef, (doc) => {
     if (doc.exists()) {
@@ -114,6 +139,10 @@ export const subscribeToLeaderboard = (
   callback: (users: User[]) => void,
   limitCount: number = 10
 ): (() => void) => {
+  if (!db) {
+    console.warn('Firestore is not initialized');
+    return () => {};
+  }
   const usersCol = collection(db, 'users');
   const leaderboardQuery = query(
     usersCol,

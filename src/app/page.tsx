@@ -5,7 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import Dashboard from "@/components/dashboard/Dashboard";
 import { getSkillTree, getUsers } from "@/data/mock-data";
 import AuthModal from "@/components/auth/AuthModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -14,6 +14,19 @@ export default function Home() {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
+
+  // Detect when user just logged in
+  useEffect(() => {
+    if (user && !loading) {
+      setIsFirstLogin(true);
+      // Remove the flag after animation
+      const timer = setTimeout(() => {
+        setIsFirstLogin(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, loading]);
 
   // Mock data for now - in real app, this would come from Firestore
   const skills = getSkillTree();
@@ -22,9 +35,12 @@ export default function Home() {
   if (loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span>{t('common.loading')}</span>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="text-lg">{t('common.loading')}</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Preparing your SkillForge experience...</p>
         </div>
       </main>
     );
@@ -60,8 +76,21 @@ export default function Home() {
     );
   }
 
+  // Show welcome animation for first login
+  if (isFirstLogin) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4 animate-in fade-in duration-1000">
+          <h1 className="text-4xl font-headline text-primary">Welcome to SkillForge!</h1>
+          <p className="text-xl text-muted-foreground">Building your personalized learning experience...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background animate-in fade-in duration-500">
       <Dashboard skills={skills} users={[user, ...users]} currentUser={user} />
     </main>
   );

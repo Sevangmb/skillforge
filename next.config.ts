@@ -29,9 +29,6 @@ const nextConfig: NextConfig = {
   },
   // Optimize for Firebase App Hosting
   output: 'standalone',
-  experimental: {
-    esmExternals: 'loose',
-  },
 };
 
 export default nextConfig;

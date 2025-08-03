@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle } from 'lucide-react';
 import { signInWithEmail, signUpWithEmail } from '@/lib/auth';
 import { Loader2 } from 'lucide-react';
 
@@ -21,6 +22,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +41,13 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         console.error('Auth error:', result.error);
         setError(getErrorMessage(result.error.code));
       } else {
-        onClose();
-        resetForm();
+        // Successful authentication
+        setSuccess(true);
+        // Add a small delay to show success before closing
+        setTimeout(() => {
+          onClose();
+          resetForm();
+        }, 800);
       }
     } catch (err) {
       console.error('Unexpected auth error:', err);
@@ -56,6 +63,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setPassword('');
     setDisplayName('');
     setError(null);
+    setSuccess(false);
     setMode('signin');
   };
 
@@ -92,8 +100,17 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          
+          {success && (
+            <Alert className="border-green-200 bg-green-50 text-green-800">
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                {mode === 'signin' ? 'Successfully signed in!' : 'Account created successfully!'} Redirecting to dashboard...
+              </AlertDescription>
+            </Alert>
+          )}
 
-          <form onSubmit={handleEmailAuth} className="space-y-4">
+          <form onSubmit={handleEmailAuth} className="space-y-4" style={{ opacity: success ? 0.6 : 1 }}>
             {mode === 'signup' && (
               <div className="space-y-2">
                 <Label htmlFor="displayName">Display Name</Label>
@@ -133,9 +150,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading || success}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === 'signin' ? 'Sign In' : 'Create Account'}
+              {success && <CheckCircle className="mr-2 h-4 w-4" />}
+              {success ? 'Success!' : (mode === 'signin' ? 'Sign In' : 'Create Account')}
             </Button>
           </form>
 
