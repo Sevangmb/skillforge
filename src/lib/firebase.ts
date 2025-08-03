@@ -11,23 +11,13 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Check if we're in a browser environment
-const isBrowser = typeof window !== 'undefined';
-
 // Initialize Firebase
-let app;
-let auth;
-let db;
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-if (isBrowser) {
-    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
-        app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-        auth = getAuth(app);
-        db = getFirestore(app);
-        if (process.env.NODE_ENV === 'development') {
-            console.log('🔥 Firebase initialized successfully in browser');
-        }
-    } else {
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
         const requiredEnvVars = [
             'NEXT_PUBLIC_FIREBASE_API_KEY',
             'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
@@ -37,12 +27,10 @@ if (isBrowser) {
         if (missingEnvVars.length > 0) {
             console.error('Missing required Firebase environment variables:', missingEnvVars);
         }
-    }
-} else {
-    // Handle SSR: app, auth, and db will be undefined
-    if (process.env.NODE_ENV === 'development') {
-        console.log('🔥 Firebase deferred on server-side');
+    } else {
+        console.log('🔥 Firebase initialized successfully');
     }
 }
+
 
 export { app, auth, db };
