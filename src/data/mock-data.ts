@@ -24,7 +24,7 @@ const skills: Skill[] = [
 const users: User[] = [
   {
     id: 'user1',
-    profile: { displayName: 'Alex Nova', email: 'alex@example.com', totalPoints: 1250, level: 15, isAdmin: true },
+    profile: { displayName: 'Sev An', email: 'sevans@hotmail.fr', totalPoints: 1250, level: 15, isAdmin: true },
     competences: {
       'maths': { level: 10, completed: true },
       'physique': { level: 8, completed: true },
