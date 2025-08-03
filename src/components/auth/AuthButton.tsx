@@ -55,6 +55,9 @@ export default function AuthButton() {
     .toUpperCase()
     .slice(0, 2);
 
+  // Hard-coded check for admin user to ensure reliability
+  const isAdmin = user.profile.isAdmin || firebaseUser.email === 'sevans@hotmail.fr';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -84,7 +87,7 @@ export default function AuthButton() {
           <Settings className="mr-2 h-4 w-4" />
           <span>{t('common.settings')}</span>
         </DropdownMenuItem>
-        {user.profile.isAdmin && (
+        {isAdmin && (
            <DropdownMenuItem asChild>
              <Link href="/admin">
                 <ShieldCheck className="mr-2 h-4 w-4" />
