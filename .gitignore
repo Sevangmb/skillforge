@@ -43,3 +43,9 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+.firebase/
+firebase-debug.*.log
+
+# Firebase cache and deployment files
+.firebase/
+*-debug.log
