@@ -9,10 +9,7 @@
     "rewrites": [
       {
         "source": "**",
-        "run": {
-          "serviceId": "skillforge-ai",
-          "region": "us-central1"
-        }
+        "destination": "/index.html"
       }
     ],
     "headers": [
