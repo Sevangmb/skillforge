@@ -37,16 +37,21 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   }, [skills]);
   
   const visibleSkills = useMemo(() => {
-    return skills.filter(skill => {
-        if (skill.prereqs.length === 0) {
-            return true;
-        }
-        return skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
+     return skills.filter(skill => {
+      // A skill is visible if it has no prerequisites OR if all its prerequisites are completed.
+      if (!skill.prereqs || skill.prereqs.length === 0) {
+        return true;
+      }
+      return skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
     });
   }, [skills, user.competences]);
 
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    // Ignore clicks on skill nodes for panning
+    if ((e.target as HTMLElement).closest('[data-skill-node="true"]')) {
+      return;
+    }
     setIsPanning(true);
     lastPanPoint.current = { x: e.pageX, y: e.pageY };
     e.currentTarget.style.cursor = 'grabbing';
