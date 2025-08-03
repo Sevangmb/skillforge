@@ -53,6 +53,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    // Only set up auth listener in browser environment
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChange(async (firebaseUser) => {
       setFirebaseUser(firebaseUser);
       

@@ -23,6 +23,10 @@ export interface AuthError {
 
 // Create user profile in Firestore
 export const createUserProfile = async (firebaseUser: FirebaseUser): Promise<User> => {
+  if (!db) {
+    throw new Error('Firestore is not initialized');
+  }
+  
   const userRef = doc(db, 'users', firebaseUser.uid);
   const userSnap = await getDoc(userRef);
 
@@ -40,6 +44,7 @@ export const createUserProfile = async (firebaseUser: FirebaseUser): Promise<Use
         learningStyle: 'Visual',
         favoriteTopics: [],
         adaptiveMode: 'Default',
+        language: 'en',
       },
     };
 
@@ -53,6 +58,11 @@ export const createUserProfile = async (firebaseUser: FirebaseUser): Promise<Use
 // Get user profile from Firestore
 export const getUserProfile = async (uid: string): Promise<User | null> => {
   try {
+    if (!db) {
+      console.warn('Firestore is not initialized');
+      return null;
+    }
+    
     const userRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userRef);
     
@@ -69,6 +79,10 @@ export const getUserProfile = async (uid: string): Promise<User | null> => {
 // Update user profile
 export const updateUserProfile = async (uid: string, updates: Partial<User>): Promise<void> => {
   try {
+    if (!db) {
+      throw new Error('Firestore is not initialized');
+    }
+    
     const userRef = doc(db, 'users', uid);
     await updateDoc(userRef, updates);
   } catch (error) {
@@ -80,6 +94,10 @@ export const updateUserProfile = async (uid: string, updates: Partial<User>): Pr
 // Sign up with email and password
 export const signUpWithEmail = async (email: string, password: string, displayName: string) => {
   try {
+    if (!auth) {
+      throw new Error('Firebase Auth is not initialized');
+    }
+    
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
@@ -98,6 +116,10 @@ export const signUpWithEmail = async (email: string, password: string, displayNa
 // Sign in with email and password
 export const signInWithEmail = async (email: string, password: string) => {
   try {
+    if (!auth) {
+      throw new Error('Firebase Auth is not initialized');
+    }
+    
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return { user: userCredential.user, error: null };
   } catch (error: any) {
@@ -108,6 +130,10 @@ export const signInWithEmail = async (email: string, password: string) => {
 // Sign in with Google
 export const signInWithGoogle = async () => {
   try {
+    if (!auth) {
+      throw new Error('Firebase Auth is not initialized');
+    }
+    
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
     
@@ -123,6 +149,10 @@ export const signInWithGoogle = async () => {
 // Sign out
 export const logOut = async () => {
   try {
+    if (!auth) {
+      throw new Error('Firebase Auth is not initialized');
+    }
+    
     await signOut(auth);
     return { error: null };
   } catch (error: any) {
@@ -132,5 +162,10 @@ export const logOut = async () => {
 
 // Auth state listener
 export const onAuthStateChange = (callback: (user: FirebaseUser | null) => void) => {
+  if (!auth) {
+    console.warn('Firebase Auth is not initialized');
+    return () => {}; // Return empty unsubscribe function
+  }
+  
   return onAuthStateChanged(auth, callback);
 };

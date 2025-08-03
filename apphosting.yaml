@@ -5,3 +5,13 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+  
+  # Environment variables for Firebase configuration
+  env:
+    NEXT_PUBLIC_FIREBASE_API_KEY: ${param:FIREBASE_API_KEY}
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${param:FIREBASE_AUTH_DOMAIN}
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${param:FIREBASE_PROJECT_ID}
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${param:FIREBASE_STORAGE_BUCKET}
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${param:FIREBASE_MESSAGING_SENDER_ID}
+    NEXT_PUBLIC_FIREBASE_APP_ID: ${param:FIREBASE_APP_ID}
+    NODE_ENV: production

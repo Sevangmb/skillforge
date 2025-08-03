@@ -31,6 +31,7 @@ export type User = {
     learningStyle: string;
     favoriteTopics: string[];
     adaptiveMode: string;
+    language: string;
   };
 };
 

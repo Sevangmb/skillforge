@@ -11,13 +11,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { logOut } from '@/lib/auth';
 import AuthModal from './AuthModal';
+import SettingsModal from '@/components/settings/SettingsModal';
 import { User, LogOut, Settings } from 'lucide-react';
 
 export default function AuthButton() {
   const { firebaseUser, user, loading } = useAuth();
+  const { t } = useLanguage();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const handleSignOut = async () => {
     await logOut();
@@ -33,7 +37,7 @@ export default function AuthButton() {
     return (
       <>
         <Button onClick={() => setShowAuthModal(true)} size="sm">
-          Sign In
+          {t('common.signin')}
         </Button>
         <AuthModal 
           isOpen={showAuthModal} 
@@ -73,18 +77,22 @@ export default function AuthButton() {
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+          <span>{t('common.profile')}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setShowSettingsModal(true)}>
           <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+          <span>{t('common.settings')}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Sign out</span>
+          <span>{t('common.signout')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+      <SettingsModal 
+        isOpen={showSettingsModal} 
+        onClose={() => setShowSettingsModal(false)} 
+      />
     </DropdownMenu>
   );
 }

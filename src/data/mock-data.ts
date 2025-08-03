@@ -23,19 +23,19 @@ const users: User[] = [
       'js_basics': { level: 80, completed: false },
       'react': { level: 20, completed: false },
     },
-    preferences: { learningStyle: 'Visual', favoriteTopics: ['Frontend', 'AI'], adaptiveMode: 'Focus' }
+    preferences: { learningStyle: 'Visual', favoriteTopics: ['Frontend', 'AI'], adaptiveMode: 'Focus', language: 'en' }
   },
   {
     id: 'user2',
     profile: { displayName: 'CyberLearner', email: 'cyber@example.com', totalPoints: 980, level: 12 },
     competences: {},
-    preferences: { learningStyle: 'Kinaesthetic', favoriteTopics: ['Backend'], adaptiveMode: 'Default' }
+    preferences: { learningStyle: 'Kinaesthetic', favoriteTopics: ['Backend'], adaptiveMode: 'Default', language: 'en' }
   },
   {
     id: 'user3',
     profile: { displayName: 'DataDiva', email: 'data@example.com', totalPoints: 1500, level: 18 },
     competences: {},
-    preferences: { learningStyle: 'Auditory', favoriteTopics: ['Databases', 'AI'], adaptiveMode: 'Objective' }
+    preferences: { learningStyle: 'Auditory', favoriteTopics: ['Databases', 'AI'], adaptiveMode: 'Objective', language: 'en' }
   }
 ];
 

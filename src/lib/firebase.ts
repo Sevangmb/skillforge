@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -11,11 +11,23 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Check if we're in a browser environment and have valid config
+const isValidConfig = typeof window !== 'undefined' && 
+  firebaseConfig.apiKey && 
+  firebaseConfig.authDomain && 
+  firebaseConfig.projectId;
 
-// Initialize Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Initialize Firebase only if we have valid config and are in browser
+let app;
+if (isValidConfig) {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+} else {
+  // Create a mock app for SSR/build time
+  app = null;
+}
+
+// Initialize Firebase services with null checks
+export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
 
 export default app;
