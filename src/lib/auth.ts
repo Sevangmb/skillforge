@@ -71,7 +71,7 @@ export const getUserProfile = async (uid: string): Promise<User | null> => {
       return userSnap.data() as User;
     }
     // If profile doesn't exist, it might be a new sign-in, try creating it
-    if (auth.currentUser && auth.currentUser.uid === uid) {
+    if (auth && auth.currentUser && auth.currentUser.uid === uid) {
       return await createUserProfile(auth.currentUser);
     }
     return null;

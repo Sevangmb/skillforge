@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Dashboard from "@/components/dashboard/Dashboard";
 import AuthModal from "@/components/auth/AuthModal";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -15,17 +15,24 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
 
-  // Detect when user just logged in
+  // Detect when user just logged in with cleanup
   useEffect(() => {
     if (user && !authLoading) {
       setIsFirstLogin(true);
-      // Remove the flag after animation
       const timer = setTimeout(() => {
         setIsFirstLogin(false);
       }, 2000);
       return () => clearTimeout(timer);
     }
   }, [user, authLoading]);
+
+  const handleAuthModalClose = useCallback(() => {
+    setShowAuthModal(false);
+  }, []);
+
+  const handleAuthModalOpen = useCallback(() => {
+    setShowAuthModal(true);
+  }, []);
 
   const isLoading = authLoading || loadingTranslations;
 
@@ -58,7 +65,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <Button 
-                onClick={() => setShowAuthModal(true)} 
+                onClick={handleAuthModalOpen} 
                 className="w-full"
                 size="lg"
               >
@@ -68,7 +75,7 @@ export default function Home() {
           </Card>
           <AuthModal 
             isOpen={showAuthModal} 
-            onClose={() => setShowAuthModal(false)} 
+            onClose={handleAuthModalClose} 
           />
         </div>
       </main>

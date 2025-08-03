@@ -3,7 +3,7 @@
  */
 
 import { CircuitBreaker, circuitBreakerRegistry, RetryStrategy } from './circuit-breaker';
-import { getRandomFallbackQuestion } from '@/data/fallback-questions';
+import { getRandomFallbackQuestion, getNextRotatedQuestion, getQuizProgress } from '@/data/fallback-questions';
 import type { QuizQuestion } from './types';
 import type { GenerateQuizQuestionInput, GenerateExplanationInput, ExpandSkillTreeInput, ExpandSkillTreeOutput } from '@/app/actions';
 
@@ -64,10 +64,24 @@ interface AIService {
   expandSkillTree(params: ExpandSkillTreeInput): Promise<ExpandSkillTreeOutput>;
 }
 
-// Fallback AI Service using static content
+// Fallback AI Service using static content with rotation
 class FallbackAIService implements AIService {
   async generateQuestion(params: GenerateQuizQuestionInput): Promise<QuizQuestion> {
     console.log('Using fallback question for skill:', params.competenceId);
+    
+    // Créer un sessionId unique basé sur userId et timestamp
+    const sessionId = `${params.userId}-${Date.now()}`;
+    
+    // Utiliser le système de rotation si possible
+    const rotatedQuestion = getNextRotatedQuestion(params.competenceId, params.userId, sessionId);
+    
+    if (rotatedQuestion) {
+      console.log('Using rotated question, progress:', getQuizProgress(sessionId));
+      return rotatedQuestion;
+    }
+    
+    // Fallback vers random si le quiz est terminé
+    console.log('Quiz session completed or failed, using random fallback');
     return getRandomFallbackQuestion(params.competenceId);
   }
 
@@ -186,9 +200,9 @@ export class ResilientAIService implements AIService {
       () => this.fallbackService.generateQuestion(params)
     );
 
-    // Cache successful result
+    // Cache successful result avec TTL réduit
     if (question) {
-      await this.cache.set(cacheKey, question, 300000); // 5 minutes
+      await this.cache.set(cacheKey, question, 60000); // 1 minute seulement
     }
 
     return question;
@@ -313,7 +327,9 @@ export class ResilientAIService implements AIService {
 
   // Private helper methods
   private getQuestionCacheKey(params: GenerateQuizQuestionInput): string {
-    return `question:${params.competenceId}:${params.userLevel}:${params.learningStyle}:${params.language}`;
+    // Inclure un timestamp pour éviter les répétitions dans la même session
+    const timestamp = Math.floor(Date.now() / 60000); // Change chaque minute
+    return `question:${params.competenceId}:${params.userLevel}:${params.learningStyle}:${params.language}:${timestamp}`;
   }
 
   private getExplanationCacheKey(params: GenerateExplanationInput): string {

@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle, CheckCircle, Loader2, Sparkles } from "lucide-react";
-import { FeatureErrorBoundary } from "@/components/ErrorBoundary";
+import { updateUserProgress } from "@/lib/client-progress";
 
 interface QuizModalProps {
   isOpen: boolean;
@@ -106,8 +106,9 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
     if (optionIndex === question?.correctAnswer) {
       setSaving(true);
       try {
-        await updateUserProgressAction({
-          userId: user.id,
+        console.log("Saving progress for user:", user.id, "skill:", skill?.id);
+        
+        await updateUserProgress({
           skillId: skill!.id,
           pointsEarned: POINTS_PER_CORRECT_ANSWER,
         });
@@ -123,7 +124,7 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
         console.error("Error saving progress:", e);
         toast({
           title: "Error",
-          description: "Could not save your progress.",
+          description: "Could not save your progress. Please try again.",
           variant: "destructive"
         });
       } finally {
@@ -189,7 +190,6 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] bg-secondary border-primary/50">
-        <FeatureErrorBoundary fallback={<OfflineQuizFallback />}>
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl text-primary">{skill?.name}</DialogTitle>
           <DialogDescription>Answer the question to increase your competence.</DialogDescription>
@@ -269,7 +269,6 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
             {isAnswered ? "Next Question" : "Skip"}
           </Button>
         </DialogFooter>
-        </FeatureErrorBoundary>
       </DialogContent>
     </Dialog>
   );

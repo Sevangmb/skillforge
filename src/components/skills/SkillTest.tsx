@@ -136,7 +136,7 @@ export default function SkillTest({ level, questions, onComplete, onExit }: Skil
 
       return {
         questionId: question.id,
-        selectedAnswer: userAnswer,
+        selectedAnswer: userAnswer ?? undefined,
         isCorrect,
         pointsEarned: isCorrect ? question.points : 0,
         timeSpent: 45, // Mock time spent

@@ -1,193 +1,118 @@
 "use client";
 
-import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  Trophy, 
-  Target, 
-  Zap, 
-  Star, 
-  Award, 
-  Crown, 
-  Flame,
-  BookOpen,
-  TrendingUp,
-  Calendar
-} from 'lucide-react';
-
-export type Achievement = {
-  id: string;
-  name: string;
-  description: string;
-  type: 'progress' | 'streak' | 'skill' | 'speed' | 'milestone' | 'social';
-  icon: string;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
-  requirement: number;
-  progress: number;
-  unlocked: boolean;
-  unlockedAt?: Date;
-};
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import type { Achievement } from '@/lib/types';
 
 interface AchievementBadgeProps {
   achievement: Achievement;
-  size?: 'sm' | 'md' | 'lg';
-  showProgress?: boolean;
+  progress?: number;
+  onClick?: () => void;
+  className?: string;
 }
 
-const iconMap = {
-  trophy: Trophy,
-  target: Target,
-  zap: Zap,
-  star: Star,
-  award: Award,
-  crown: Crown,
-  flame: Flame,
-  book: BookOpen,
-  trending: TrendingUp,
-  calendar: Calendar,
+const rarityColors: Record<Achievement['rarity'], string> = {
+  common: 'border-gray-300 bg-gray-50',
+  rare: 'border-blue-300 bg-blue-50',
+  epic: 'border-purple-300 bg-purple-50',
+  legendary: 'border-yellow-300 bg-yellow-50',
 };
 
-const rarityColors = {
-  common: 'bg-slate-100 border-slate-300 text-slate-700',
-  rare: 'bg-blue-100 border-blue-300 text-blue-700',
-  epic: 'bg-purple-100 border-purple-300 text-purple-700',
-  legendary: 'bg-amber-100 border-amber-300 text-amber-700',
+const rarityLabels: Record<Achievement['rarity'], string> = {
+  common: 'Common',
+  rare: 'Rare',
+  epic: 'Epic',
+  legendary: 'Legendary',
 };
 
-const rarityGlow = {
-  common: '',
-  rare: 'shadow-blue-200/50',
-  epic: 'shadow-purple-200/50',
-  legendary: 'shadow-amber-200/50 animate-pulse',
-};
-
-export default function AchievementBadge({ 
+export function AchievementBadge({ 
   achievement, 
-  size = 'md', 
-  showProgress = false 
+  progress = 0, 
+  onClick,
+  className 
 }: AchievementBadgeProps) {
-  const IconComponent = iconMap[achievement.icon as keyof typeof iconMap] || Trophy;
-  
-  const sizeClasses = {
-    sm: 'w-12 h-12',
-    md: 'w-16 h-16', 
-    lg: 'w-20 h-20'
-  };
+  const [isHovered, setIsHovered] = useState(false);
 
-  const iconSizes = {
-    sm: 'h-6 w-6',
-    md: 'h-8 w-8',
-    lg: 'h-10 w-10'
-  };
+  const progressPercentage = achievement.maxProgress 
+    ? (progress / achievement.maxProgress) * 100 
+    : 0;
 
-  const progressPercentage = achievement.unlocked 
-    ? 100 
-    : Math.min((achievement.progress / achievement.requirement) * 100, 100);
+  const isUnlocked = achievement.unlocked;
+  const isInProgress = !isUnlocked && progress > 0;
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Card 
-            className={`
-              ${sizeClasses[size]} 
-              relative overflow-hidden transition-all duration-300 hover:scale-105 cursor-pointer
-              ${achievement.unlocked 
-                ? `${rarityColors[achievement.rarity]} shadow-lg ${rarityGlow[achievement.rarity]}`
-                : 'bg-muted border-muted-foreground/20 text-muted-foreground'
-              }
-            `}
-          >
-            <CardContent className="p-0 flex items-center justify-center h-full relative">
-              <IconComponent 
-                className={`
-                  ${iconSizes[size]} 
-                  ${achievement.unlocked ? '' : 'opacity-50'}
-                `} 
-              />
-              
-              {/* Progress Ring for Unlocked */}
-              {achievement.unlocked && (
-                <div className="absolute inset-0">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle
-                      cx="50%"
-                      cy="50%"
-                      r="45%"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeDasharray={`${progressPercentage * 2.83} 283`}
-                      className="opacity-20"
-                    />
-                  </svg>
-                </div>
-              )}
+    <Card
+      className={cn(
+        "transition-all duration-200 cursor-pointer",
+        rarityColors[achievement.rarity],
+        isUnlocked && "ring-2 ring-green-400",
+        isHovered && "scale-105 shadow-lg",
+        className
+      )}
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start space-x-3">
+          {/* Icon */}
+          <div className="text-2xl flex-shrink-0">
+            {achievement.icon}
+          </div>
 
-              {/* Progress Ring for In Progress */}
-              {!achievement.unlocked && showProgress && achievement.progress > 0 && (
-                <div className="absolute inset-0">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle
-                      cx="50%"
-                      cy="50%"
-                      r="45%"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeDasharray={`${progressPercentage * 2.83} 283`}
-                      className="opacity-50"
-                    />
-                  </svg>
-                </div>
-              )}
-
-              {/* Rarity Badge */}
-              {achievement.unlocked && achievement.rarity !== 'common' && (
-                <Badge 
-                  variant="secondary" 
-                  className="absolute -top-1 -right-1 text-xs px-1 py-0 h-4"
-                >
-                  {achievement.rarity}
-                </Badge>
-              )}
-            </CardContent>
-          </Card>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-xs">
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <h4 className="font-semibold">{achievement.name}</h4>
-              <Badge variant="outline" className="text-xs">
-                {achievement.rarity}
+          {/* Content */}
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">{achievement.title}</h3>
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "text-xs",
+                  achievement.rarity === 'legendary' && "text-yellow-600",
+                  achievement.rarity === 'epic' && "text-purple-600",
+                  achievement.rarity === 'rare' && "text-blue-600",
+                  achievement.rarity === 'common' && "text-gray-600"
+                )}
+              >
+                {rarityLabels[achievement.rarity]}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground">
+
+            <p className="text-xs text-muted-foreground">
               {achievement.description}
             </p>
-            {!achievement.unlocked && (
-              <div className="text-xs">
-                <div className="flex justify-between items-center">
-                  <span>Progress:</span>
-                  <span>{achievement.progress}/{achievement.requirement}</span>
+
+            {/* Progress Bar */}
+            {!isUnlocked && (
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span>Progress</span>
+                  <span>{progress}/{achievement.condition.value}</span>
                 </div>
-                <div className="w-full bg-muted rounded-full h-2 mt-1">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
+                <Progress value={progressPercentage} className="h-1" />
               </div>
             )}
-            {achievement.unlocked && achievement.unlockedAt && (
-              <p className="text-xs text-muted-foreground">
+
+            {/* XP Reward */}
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">XP Reward</span>
+              <span className="font-medium text-green-600">
+                +{achievement.xpReward} XP
+              </span>
+            </div>
+
+            {/* Unlock Date */}
+            {isUnlocked && achievement.unlockedAt && (
+              <div className="text-xs text-muted-foreground">
                 Unlocked {achievement.unlockedAt.toLocaleDateString()}
-              </p>
+              </div>
             )}
           </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

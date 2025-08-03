@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 import type { User, Skill, Achievement } from '@/lib/types';
+import { ACHIEVEMENTS, checkAchievements } from '@/lib/achievements';
 
 // Types for store state
 interface AppState {
@@ -20,6 +21,7 @@ interface AppState {
   
   // Achievements state
   achievements: Achievement[];
+  recentUnlockedAchievements: Achievement[];
   
   // Modal states
   quizModalOpen: boolean;
@@ -46,17 +48,13 @@ interface AppActions {
   // Achievement actions
   setAchievements: (achievements: Achievement[]) => void;
   unlockAchievement: (achievementId: string) => void;
+  checkAndUnlockAchievements: () => void;
+  clearRecentAchievements: () => void;
   
   // Modal actions
   setQuizModalOpen: (open: boolean) => void;
   setSettingsModalOpen: (open: boolean) => void;
   setAchievementModalOpen: (open: boolean) => void;
-  
-  // Computed getters
-  getAvailableSkills: () => Skill[];
-  getCompletedSkills: () => Skill[];
-  getUserLevel: () => number;
-  getTotalXP: () => number;
 }
 
 type AppStore = AppState & AppActions;
@@ -71,7 +69,8 @@ const initialState: AppState = {
   sidebarOpen: true,
   currentView: 'desktop',
   onboardingCompleted: false,
-  achievements: [],
+  achievements: ACHIEVEMENTS,
+  recentUnlockedAchievements: [],
   quizModalOpen: false,
   settingsModalOpen: false,
   achievementModalOpen: false,
@@ -89,24 +88,25 @@ export const useAppStore = create<AppStore>()(
         updateUserProgress: (skillId, completed, points = 0) => set((state) => {
           if (!state.user) return state;
           
+          const currentCompetence = state.user.competences[skillId];
+          const newTotalPoints = state.user.profile.totalPoints + points;
+          const newLevel = Math.floor(newTotalPoints / 1000) + 1;
+          
           const newUser = {
             ...state.user,
             competences: {
               ...state.user.competences,
               [skillId]: {
-                level: state.user.competences[skillId]?.level || 1,
+                level: currentCompetence?.level || 1,
                 completed,
               },
             },
             profile: {
               ...state.user.profile,
-              totalPoints: state.user.profile.totalPoints + points,
+              totalPoints: newTotalPoints,
+              level: newLevel,
             },
           };
-
-          // Recalculate level based on total points
-          const newLevel = Math.floor(newUser.profile.totalPoints / 1000) + 1;
-          newUser.profile.level = newLevel;
 
           return { user: newUser };
         }),
@@ -133,43 +133,31 @@ export const useAppStore = create<AppStore>()(
           ),
         })),
 
+        checkAndUnlockAchievements: () => set((state) => {
+          if (!state.user || !state.skills.length) return state;
+
+          const unlockedAchievements = checkAchievements(state.user, state.skills);
+          
+          if (unlockedAchievements.length === 0) return state;
+
+          // Update achievements
+          const updatedAchievements = state.achievements.map(achievement => {
+            const unlocked = unlockedAchievements.find(u => u.id === achievement.id);
+            return unlocked ? { ...achievement, unlocked: true, unlockedAt: new Date() } : achievement;
+          });
+
+          return {
+            achievements: updatedAchievements,
+            recentUnlockedAchievements: [...state.recentUnlockedAchievements, ...unlockedAchievements]
+          };
+        }),
+
+        clearRecentAchievements: () => set({ recentUnlockedAchievements: [] }),
+
         // Modal actions
         setQuizModalOpen: (quizModalOpen) => set({ quizModalOpen }),
         setSettingsModalOpen: (settingsModalOpen) => set({ settingsModalOpen }),
         setAchievementModalOpen: (achievementModalOpen) => set({ achievementModalOpen }),
-
-        // Computed getters
-        getAvailableSkills: () => {
-          const { skills, user } = get();
-          if (!user) return [];
-          
-          return skills.filter(skill => {
-            const isCompleted = user.competences[skill.id]?.completed;
-            if (isCompleted) return false;
-            
-            const prereqsMet = skill.prereqs.every(prereqId => 
-              user.competences[prereqId]?.completed
-            );
-            return prereqsMet;
-          });
-        },
-
-        getCompletedSkills: () => {
-          const { skills, user } = get();
-          if (!user) return [];
-          
-          return skills.filter(skill => user.competences[skill.id]?.completed);
-        },
-
-        getUserLevel: () => {
-          const { user } = get();
-          return user?.profile.level || 1;
-        },
-
-        getTotalXP: () => {
-          const { user } = get();
-          return user?.profile.totalPoints || 0;
-        },
       })),
       {
         name: 'skillforge-app-store',
@@ -177,6 +165,7 @@ export const useAppStore = create<AppStore>()(
           onboardingCompleted: state.onboardingCompleted,
           sidebarOpen: state.sidebarOpen,
           currentView: state.currentView,
+          achievements: state.achievements,
         }),
       }
     ),
@@ -186,20 +175,28 @@ export const useAppStore = create<AppStore>()(
   )
 );
 
-// Selectors for better performance
+// Basic selectors - these are stable and memoized
 export const useUser = () => useAppStore((state) => state.user);
 export const useIsAuthenticated = () => useAppStore((state) => state.isAuthenticated);
 export const useSkills = () => useAppStore((state) => state.skills);
 export const useSelectedSkill = () => useAppStore((state) => state.selectedSkill);
-export const useAvailableSkills = () => useAppStore((state) => state.getAvailableSkills());
-export const useCompletedSkills = () => useAppStore((state) => state.getCompletedSkills());
-export const useUserLevel = () => useAppStore((state) => state.getUserLevel());
-export const useTotalXP = () => useAppStore((state) => state.getTotalXP());
+export const useUserLevel = () => useAppStore((state) => state.user?.profile.level || 1);
+export const useTotalXP = () => useAppStore((state) => state.user?.profile.totalPoints || 0);
 
-// Achievement hooks
+// Computed selectors for better performance
+export const useCompletedSkillsCount = () => useAppStore((state) => {
+  if (!state.user) return 0;
+  return Object.values(state.user.competences).filter(comp => comp.completed).length;
+});
+
+export const useUnlockedAchievementsCount = () => useAppStore((state) => 
+  state.achievements.filter(achievement => achievement.unlocked).length
+);
+
+// Achievement hooks - basic data only
 export const useAchievements = () => useAppStore((state) => state.achievements);
-export const useUnlockedAchievements = () => 
-  useAppStore((state) => state.achievements.filter(a => a.unlocked));
+export const useRecentUnlockedAchievements = () => 
+  useAppStore((state) => state.recentUnlockedAchievements);
 
 // UI hooks
 export const useSidebarOpen = () => useAppStore((state) => state.sidebarOpen);
