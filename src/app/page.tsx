@@ -10,14 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 export default function Home() {
-  const { user, loading } = useAuth();
-  const { t } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
+  const { t, loadingTranslations } = useLanguage();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
 
   // Detect when user just logged in
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !authLoading) {
       setIsFirstLogin(true);
       // Remove the flag after animation
       const timer = setTimeout(() => {
@@ -25,9 +25,11 @@ export default function Home() {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [user, loading]);
+  }, [user, authLoading]);
 
-  if (loading) {
+  const isLoading = authLoading || loadingTranslations;
+
+  if (isLoading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">

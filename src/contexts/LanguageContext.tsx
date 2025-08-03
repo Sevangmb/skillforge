@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { updateUserProfile } from '@/lib/auth';
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE, getBrowserLanguage } from '@/lib/i18n';
@@ -12,6 +12,7 @@ interface LanguageContextType {
   supportedLanguages: Language[];
   setLanguage: (languageCode: string) => Promise<void>;
   t: (key: string, params?: Record<string, string>) => string;
+  loadingTranslations: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -54,46 +55,22 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const { user, firebaseUser } = useAuth();
   const [currentLanguage, setCurrentLanguage] = useState<string>(DEFAULT_LANGUAGE);
   const [currentTranslations, setCurrentTranslations] = useState<Record<string, string>>({});
+  const [loadingTranslations, setLoadingTranslations] = useState(true);
 
-  // Initialize language from user preferences or browser
-  useEffect(() => {
-    // Skip initialization during SSR
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const initializeLanguage = async () => {
-      let initialLanguage = DEFAULT_LANGUAGE;
-      
-      if (user?.preferences?.language) {
-        initialLanguage = user.preferences.language;
-      } else {
-        initialLanguage = getBrowserLanguage();
-      }
-
-      setCurrentLanguage(initialLanguage);
-      const translations = await loadTranslations(initialLanguage);
-      setCurrentTranslations(translations);
-    };
-
-    initializeLanguage();
-  }, [user]);
-
-  const setLanguage = async (languageCode: string) => {
-    // Validate language code
+  const setLanguage = useCallback(async (languageCode: string) => {
     const isSupported = SUPPORTED_LANGUAGES.some(lang => lang.code === languageCode);
     if (!isSupported) {
       console.error(`Language ${languageCode} is not supported`);
       return;
     }
 
+    setLoadingTranslations(true);
     setCurrentLanguage(languageCode);
     
-    // Load new translations
     const newTranslations = await loadTranslations(languageCode);
     setCurrentTranslations(newTranslations);
+    setLoadingTranslations(false);
 
-    // Update user preferences if authenticated
     if (firebaseUser && user) {
       try {
         await updateUserProfile(firebaseUser.uid, {
@@ -107,20 +84,41 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       }
     }
 
-    // Store in localStorage for non-authenticated users
     if (typeof window !== 'undefined') {
       localStorage.setItem('skillforge-language', languageCode);
     }
-  };
+  }, [user, firebaseUser]);
+
+
+  // Initialize language
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+        setLoadingTranslations(false);
+        return;
+    }
+    
+    let initialLanguage = DEFAULT_LANGUAGE;
+    if (user?.preferences?.language) {
+      initialLanguage = user.preferences.language;
+    } else {
+      initialLanguage = getBrowserLanguage();
+    }
+    setLanguage(initialLanguage);
+
+  }, [user, setLanguage]);
 
   // Translation function
   const t = (key: string, params?: Record<string, string>): string => {
+    if (loadingTranslations) {
+        // Return a placeholder or empty string while loading
+        return key.split('.').pop() || '';
+    }
+
     let translation = currentTranslations[key] || key;
     
-    // Replace parameters in translation
     if (params) {
       Object.entries(params).forEach(([param, value]) => {
-        translation = translation.replace(`{{${param}}}`, value);
+        translation = translation.replace(new RegExp(`{{${param}}}`, 'g'), value);
       });
     }
     
@@ -135,6 +133,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     supportedLanguages: SUPPORTED_LANGUAGES,
     setLanguage,
     t,
+    loadingTranslations,
   };
 
   return (
