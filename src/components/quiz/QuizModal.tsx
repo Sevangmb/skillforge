@@ -5,12 +5,13 @@ import type { Skill, User, QuizQuestion } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { generateQuizQuestionAction } from "@/app/actions";
+import { generateQuizQuestionAction, updateUserProgressAction } from "@/app/actions";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 
 interface QuizModalProps {
   isOpen: boolean;
@@ -20,16 +21,19 @@ interface QuizModalProps {
 }
 
 const TIMER_DURATION = 30; // 30 seconds
+const POINTS_PER_CORRECT_ANSWER = 10;
 
 export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalProps) {
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const { toast } = useToast();
   const { currentLanguage } = useLanguage();
+  const { refreshUser } = useAuth();
 
   const fetchQuestion = useCallback(async () => {
     if (!skill || !user) return;
@@ -89,17 +93,36 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
   }, [isOpen, loading, isAnswered, timeLeft, question, toast]);
 
 
-  const handleAnswer = (optionIndex: number) => {
+  const handleAnswer = async (optionIndex: number) => {
     if (isAnswered) return;
     setSelectedAnswer(optionIndex);
     setIsAnswered(true);
 
     if (optionIndex === question?.correctAnswer) {
-      toast({
-        title: "Correct!",
-        description: `You've earned points towards ${skill?.name}.`,
-        className: "bg-green-500 text-white"
-      });
+      setSaving(true);
+      try {
+        await updateUserProgressAction({
+          userId: user.id,
+          skillId: skill!.id,
+          pointsEarned: POINTS_PER_CORRECT_ANSWER,
+        });
+
+        await refreshUser(); // Refresh user data in the app
+
+        toast({
+          title: "Correct!",
+          description: `You've earned ${POINTS_PER_CORRECT_ANSWER} points towards ${skill?.name}.`,
+          className: "bg-green-500 text-white"
+        });
+      } catch (e) {
+        toast({
+          title: "Error",
+          description: "Could not save your progress.",
+          variant: "destructive"
+        });
+      } finally {
+        setSaving(false);
+      }
     } else {
        toast({
         title: "Incorrect",
@@ -153,7 +176,7 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
                     variant="outline"
                     className={cn("w-full justify-start h-auto py-2 text-left whitespace-normal", getOptionClass(index))}
                     onClick={() => handleAnswer(index)}
-                    disabled={isAnswered}
+                    disabled={isAnswered || saving}
                   >
                     {option}
                   </Button>
@@ -186,8 +209,9 @@ export default function QuizModal({ isOpen, onClose, skill, user }: QuizModalPro
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
-          <Button onClick={fetchQuestion} disabled={loading}>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Close</Button>
+          <Button onClick={fetchQuestion} disabled={loading || saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isAnswered ? "Next Question" : "Skip"}
           </Button>
         </DialogFooter>
