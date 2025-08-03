@@ -37,19 +37,30 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   }, [skills]);
   
   const visibleSkills = useMemo(() => {
-      // A skill is visible if it has no prerequisites OR if all its prerequisites are completed by the user.
-      return skills.filter(skill => {
-          if (!skill.prereqs || skill.prereqs.length === 0) {
-              return true;
-          }
-          return skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
-      });
+    const visible = new Set<string>();
+    
+    // First, find all completed skills
+    const completedSkills = new Set<string>();
+    Object.entries(user.competences).forEach(([skillId, status]) => {
+      if (status.completed) {
+        completedSkills.add(skillId);
+      }
+    });
+
+    // A skill is visible if it has no prerequisites, OR if all its prerequisites are completed.
+    return skills.filter(skill => {
+        if (!skill.prereqs || skill.prereqs.length === 0) {
+            return true;
+        }
+        return skill.prereqs.every(prereqId => completedSkills.has(prereqId));
+    });
   }, [skills, user.competences]);
 
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-    // Ignore clicks on skill nodes for panning
-    if ((e.target as HTMLElement).closest('[data-skill-node="true"]')) {
+    const target = e.target as HTMLElement;
+    // Allow panning only when clicking on the background, not on a skill node.
+    if (target.closest('.skill-node-container')) {
       return;
     }
     setIsPanning(true);
@@ -63,8 +74,10 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   };
   
   const handleMouseLeave = (e: MouseEvent<HTMLDivElement>) => {
-    setIsPanning(false);
-    e.currentTarget.style.cursor = 'grab';
+    if (isPanning) {
+      setIsPanning(false);
+      e.currentTarget.style.cursor = 'grab';
+    }
   };
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
@@ -79,9 +92,8 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
     e.preventDefault();
     const scaleAmount = e.deltaY > 0 ? -0.1 : 0.1;
     let newScale = view.scale + scaleAmount;
-    newScale = Math.min(Math.max(0.3, newScale), 1.5);
+    newScale = Math.min(Math.max(0.3, 1.5), newScale);
     
-    // Zoom towards cursor
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
 
@@ -94,11 +106,13 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
     setView({ scale: newScale, x: newX, y: newY });
   };
   
-
   const getStatus = (skill: Skill) => {
-    if (user.competences[skill.id]?.completed) return 'completed';
-    const prereqsMet = skill.prereqs.every(id => user.competences[id]?.completed);
+    const competence = user.competences[skill.id];
+    if (competence?.completed) return 'completed';
+    
+    const prereqsMet = !skill.prereqs || skill.prereqs.every(id => user.competences[id]?.completed);
     if (prereqsMet) return 'available';
+
     return skill.isSecret ? 'secret' : 'locked';
   }
 
@@ -135,12 +149,13 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
         </svg>
 
         {visibleSkills.map(skill => (
-          <SkillNode
-            key={skill.id}
-            skill={skill}
-            status={getStatus(skill)}
-            onClick={() => onNodeClick(skill)}
-          />
+           <div key={skill.id} className="skill-node-container" data-skill-node="true">
+              <SkillNode
+                skill={skill}
+                status={getStatus(skill)}
+                onClick={() => onNodeClick(skill)}
+              />
+            </div>
         ))}
       </div>
     </div>
