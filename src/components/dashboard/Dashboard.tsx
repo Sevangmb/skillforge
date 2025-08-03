@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Skill, User } from "@/lib/types";
@@ -26,28 +27,24 @@ interface DashboardProps {
 export default function Dashboard({ currentUser }: DashboardProps) {
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [leaderboardUsers, setLeaderboardUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSkillsAndSubscribe = async () => {
+    async function fetchData() {
       setLoading(true);
       const skillsFromDb = await getSkillsFromFirestore();
       setSkills(skillsFromDb);
       setLoading(false);
+    }
 
-      const unsubscribe = subscribeToLeaderboard((leaderboardUsers) => {
-        setUsers(leaderboardUsers);
-      });
+    fetchData();
 
-      return () => unsubscribe();
-    };
+    const unsubscribe = subscribeToLeaderboard((users) => {
+      setLeaderboardUsers(users);
+    });
 
-    const unsubscribePromise = fetchSkillsAndSubscribe();
-
-    return () => {
-      unsubscribePromise.then(unsubscribe => unsubscribe && unsubscribe());
-    };
+    return () => unsubscribe();
   }, []);
 
   const handleNodeClick = (skill: Skill) => {
@@ -74,7 +71,7 @@ export default function Dashboard({ currentUser }: DashboardProps) {
         </SidebarHeader>
         <Separator className="my-2" />
         <SidebarContent>
-          <Leaderboard users={users} />
+          <Leaderboard users={leaderboardUsers} />
         </SidebarContent>
         <SidebarFooter>
           <p className="text-xs text-muted-foreground p-2">© 2024 SkillForge AI</p>

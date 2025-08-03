@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useRef, MouseEvent, WheelEvent, useMemo, useEffect } from 'react';
+import { useState, useRef, MouseEvent, WheelEvent, useMemo } from 'react';
 import type { Skill, User } from '@/lib/types';
 import SkillNode from './SkillNode';
 import SkillConnection from './SkillConnection';
@@ -37,25 +38,19 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   }, [skills]);
   
   const visibleSkills = useMemo(() => {
-    const completedSkills = new Set<string>();
-    Object.entries(user.competences).forEach(([skillId, status]) => {
-      if (status.completed) {
-        completedSkills.add(skillId);
-      }
-    });
-
+    const completedSkillIds = new Set(Object.keys(user.competences).filter(id => user.competences[id].completed));
     return skills.filter(skill => {
-        // A skill is visible if it has no prerequisites, OR if all its prerequisites are completed.
         if (!skill.prereqs || skill.prereqs.length === 0) {
-            return true;
+            return true; // Always show skills with no prerequisites
         }
-        return skill.prereqs.every(prereqId => completedSkills.has(prereqId));
+        return skill.prereqs.every(prereqId => completedSkillIds.has(prereqId));
     });
   }, [skills, user.competences]);
 
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
+    // Prevent panning when clicking on a skill node
     if (target.closest('[data-skill-node="true"]')) {
       return;
     }
