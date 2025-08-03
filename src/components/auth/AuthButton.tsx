@@ -88,12 +88,12 @@ export default function AuthButton() {
           <span>{t('common.settings')}</span>
         </DropdownMenuItem>
         {isAdmin && (
-           <DropdownMenuItem asChild>
-             <Link href="/admin">
+           <Link href="/admin" passHref legacyBehavior>
+            <DropdownMenuItem>
                 <ShieldCheck className="mr-2 h-4 w-4" />
                 <span>Admin</span>
-             </Link>
-          </DropdownMenuItem>
+            </DropdownMenuItem>
+           </Link>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
