@@ -29,6 +29,8 @@ const users: User[] = [
       'maths': { level: 10, completed: true },
       'physique': { level: 8, completed: true },
       'informatique': { level: 12, completed: true },
+      'chimie': { level: 5, completed: true },
+      'biologie': { level: 7, completed: true },
     },
     preferences: { learningStyle: 'Visual', favoriteTopics: ['Frontend', 'AI'], adaptiveMode: 'Focus', language: 'fr' }
   },
