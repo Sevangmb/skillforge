@@ -45,6 +45,7 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
     });
 
     return skills.filter(skill => {
+        // A skill is visible if it has no prerequisites, OR if all its prerequisites are completed.
         if (!skill.prereqs || skill.prereqs.length === 0) {
             return true;
         }
