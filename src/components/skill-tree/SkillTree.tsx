@@ -37,13 +37,13 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   }, [skills]);
   
   const visibleSkills = useMemo(() => {
-     return skills.filter(skill => {
-      // A skill is visible if it has no prerequisites OR if all its prerequisites are completed.
-      if (!skill.prereqs || skill.prereqs.length === 0) {
-        return true;
-      }
-      return skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
-    });
+      // A skill is visible if it has no prerequisites OR if all its prerequisites are completed by the user.
+      return skills.filter(skill => {
+          if (!skill.prereqs || skill.prereqs.length === 0) {
+              return true;
+          }
+          return skill.prereqs.every(prereqId => user.competences[prereqId]?.completed);
+      });
   }, [skills, user.competences]);
 
 
@@ -117,7 +117,7 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
         className="absolute top-0 left-0 transition-transform duration-100 ease-linear"
         style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}
       >
-        <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ width: 2000, height: 1000 }}>
+        <svg width="2000" height="1000" className="absolute top-0 left-0 pointer-events-none">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
                 markerWidth="6" markerHeight="6"

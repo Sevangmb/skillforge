@@ -21,7 +21,7 @@ export default function Leaderboard({ users }: LeaderboardProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-10">Rank</TableHead>
+            <TableHead className="w-[50px]">Rank</TableHead>
             <TableHead>User</TableHead>
             <TableHead className="text-right">Points</TableHead>
           </TableRow>
