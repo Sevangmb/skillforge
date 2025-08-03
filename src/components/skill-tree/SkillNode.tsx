@@ -1,6 +1,6 @@
 import type { Skill, SkillStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Code, Database, Cloud, Cpu, GitBranch, Lock, Star } from "lucide-react";
+import { Code, Database, Cloud, Cpu, GitBranch, Lock, Star, Atom, FlaskConical, Dna, Scroll, Languages, Globe, Cog, Helix, BrainCircuit, Landmark, Milestone } from "lucide-react";
 
 interface SkillNodeProps {
   skill: Skill;
@@ -10,11 +10,21 @@ interface SkillNodeProps {
 
 const ICONS: Record<string, React.ElementType> = {
   Code,
-  Server: Cpu,
   Database,
   Cloud,
   Cpu,
   GitBranch,
+  Atom,
+  FlaskConical,
+  Dna,
+  Scroll,
+  Languages,
+  Globe,
+  Cog,
+  Helix,
+  BrainCircuit,
+  Landmark,
+  Milestone,
   Default: Star,
 };
 
