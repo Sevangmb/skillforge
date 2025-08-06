@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Règles pour les utilisateurs - lecture/écriture pour les utilisateurs authentifiés
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Règles pour les compétences (skills) - lecture pour tous, écriture pour les authentifiés
+    match /skills/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Règles pour les parcours de quiz - accès pour les utilisateurs authentifiés
+    match /quiz_paths/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Règles pour les étapes de quiz - accès pour les utilisateurs authentifiés
+    match /quiz_steps/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Règles pour les défis quotidiens - accès pour les utilisateurs authentifiés
+    match /daily_challenges/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Règles pour le leaderboard - lecture pour tous
+    match /leaderboard/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Règles par défaut - accès restreint aux utilisateurs authentifiés
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

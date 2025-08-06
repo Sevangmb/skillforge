@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// RÈGLES ULTRA-PERMISSIVES POUR DÉVELOPPEMENT
+// ⚠️ A CHANGER EN PRODUCTION ⚠️
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Accès complet pour tous (développement seulement)
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+
+// COPIER CES RÈGLES DANS FIREBASE CONSOLE:
+// 1. Allez sur https://console.firebase.google.com
+// 2. Projet skillforge-ai-tk7mp
+// 3. Firestore Database → Règles  
+// 4. Copiez le contenu ci-dessus
+// 5. Publiez
