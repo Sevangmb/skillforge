@@ -13,6 +13,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle, CheckCircle, Loader2, Sparkles } from "lucide-react";
 import { FeatureErrorBoundary } from "@/components/ErrorBoundary";
+import { diagnoseQuizQuestion, repairQuizQuestion, generateQuestionReport } from "@/lib/quiz-diagnostics";
 
 interface QuizModalProps {
   isOpen: boolean;
@@ -25,36 +26,49 @@ const TIMER_DURATION = 30;
 const POINTS_PER_CORRECT_ANSWER = 10;
 const EXPLANATION_DELAY = 1000; // Delay before showing explanation
 
-// Fonction de validation robuste des questions
+// Utiliser les outils de diagnostic centralisés
 function isValidQuizQuestion(question: any): question is QuizQuestion {
-  if (!question || typeof question !== 'object') {
-    return false;
+  const diagnostic = diagnoseQuizQuestion(question);
+  
+  // Log détaillé en mode développement
+  if (!diagnostic.isValid && process.env.NODE_ENV === 'development') {
+    console.debug(generateQuestionReport(question));
   }
-
-  // Validation des champs requis
-  const hasQuestion = typeof question.question === 'string' && question.question.trim().length > 0;
-  const hasOptions = Array.isArray(question.options) && question.options.length >= 2;
-  const hasValidAnswer = typeof question.correctAnswer === 'number' && 
-                        question.correctAnswer >= 0 && 
-                        question.correctAnswer < (question.options?.length || 0);
-  const hasExplanation = typeof question.explanation === 'string';
-
-  // Validation des options (toutes doivent être des strings non-vides)
-  const validOptions = question.options?.every((option: any) => 
-    typeof option === 'string' && option.trim().length > 0
-  );
-
-  return hasQuestion && hasOptions && hasValidAnswer && hasExplanation && validOptions;
+  
+  return diagnostic.isValid;
 }
 
-// Question de secours garantie valide
+// Questions de secours variées pour une meilleure expérience
 function getEmergencyFallbackQuestion(): QuizQuestion {
-  return {
-    question: "Quelle est la couleur du ciel par temps clair ?",
-    options: ["Rouge", "Vert", "Bleu", "Jaune"],
-    correctAnswer: 2,
-    explanation: "Le ciel apparaît bleu en raison de la diffusion de la lumière bleue par les particules dans l'atmosphère."
-  };
+  const fallbackQuestions: QuizQuestion[] = [
+    {
+      question: "Quelle est la couleur du ciel par temps clair ?",
+      options: ["Rouge", "Vert", "Bleu", "Jaune"],
+      correctAnswer: 2,
+      explanation: "Le ciel apparaît bleu en raison de la diffusion de la lumière bleue par les particules dans l'atmosphère."
+    },
+    {
+      question: "Combien font 7 + 5 ?",
+      options: ["10", "11", "12", "13"],
+      correctAnswer: 2,
+      explanation: "7 + 5 = 12. C'est une addition simple de nombres à un chiffre."
+    },
+    {
+      question: "Quelle est la capitale de la France ?",
+      options: ["Lyon", "Marseille", "Paris", "Toulouse"],
+      correctAnswer: 2,
+      explanation: "Paris est la capitale de la France depuis le Moyen Âge et le centre politique du pays."
+    },
+    {
+      question: "Quel est le plus grand océan du monde ?",
+      options: ["Atlantique", "Indien", "Arctique", "Pacifique"],
+      correctAnswer: 3,
+      explanation: "L'océan Pacifique couvre environ un tiers de la surface de la Terre."
+    }
+  ];
+  
+  const randomIndex = Math.floor(Math.random() * fallbackQuestions.length);
+  return fallbackQuestions[randomIndex];
 }
 
 function QuizModal({ isOpen, onClose, skill, user }: QuizModalProps) {
@@ -85,41 +99,73 @@ function QuizModal({ isOpen, onClose, skill, user }: QuizModalProps) {
 
     try {
       const startTime = performance.now();
-      const result = await generateQuizQuestionAction({
-        competenceId: skill.id,
-        userId: user.id,
-        userLevel: user.competences[skill.id]?.level || 0,
-        learningStyle: user.preferences.learningStyle,
-        language: currentLanguage,
-      });
+      
+      // Tentative de génération avec l'IA
+      let result: any = null;
+      let usedFallback = false;
+      
+      try {
+        result = await generateQuizQuestionAction({
+          competenceId: skill.id,
+          userId: user.id,
+          userLevel: user.competences[skill.id]?.level || 0,
+          learningStyle: user.preferences.learningStyle,
+          language: currentLanguage,
+        });
+      } catch (aiError) {
+        console.warn('AI service failed, using fallback:', aiError);
+        usedFallback = true;
+      }
       
       const endTime = performance.now();
       console.log(`Question generation took ${(endTime - startTime).toFixed(2)}ms`);
       
-      // Validation robuste du format de question
-      if (isValidQuizQuestion(result)) {
-        setQuestion(result as QuizQuestion);
-      } else {
-        console.warn('Invalid question format received:', {
-          result,
-          hasQuestion: result?.question ? 'Yes' : 'No',
-          hasOptions: Array.isArray(result?.options) ? `Yes (${result.options.length})` : 'No',
-          hasCorrectAnswer: typeof result?.correctAnswer === 'number' ? 'Yes' : 'No',
-          hasExplanation: result?.explanation ? 'Yes' : 'No'
-        });
-        throw new Error(`Invalid question format: Missing required fields`);
-      }
-    } catch (err) {
-      console.error('Question generation failed:', err);
+      // Validation et fallback en cascade avec réparation
+      let finalQuestion: QuizQuestion;
       
-      // Utiliser la question de secours pour maintenir l'expérience utilisateur
-      console.log('Using emergency fallback question');
+      if (result && isValidQuizQuestion(result)) {
+        finalQuestion = result as QuizQuestion;
+        console.log('Using AI-generated question');
+      } else if (result) {
+        console.warn('Invalid AI question format, attempting repair');
+        const repairedQuestion = repairQuizQuestion(result);
+        
+        if (repairedQuestion) {
+          finalQuestion = repairedQuestion;
+          usedFallback = true;
+          console.log('Using repaired AI question');
+        } else {
+          finalQuestion = getEmergencyFallbackQuestion();
+          usedFallback = true;
+          console.log('Repair failed, using emergency fallback');
+        }
+      } else {
+        finalQuestion = getEmergencyFallbackQuestion();
+        usedFallback = true;
+        console.log('No result from AI, using emergency fallback');
+      }
+      
+      setQuestion(finalQuestion);
+      
+      if (usedFallback) {
+        toast({
+          title: "Mode Démonstration",
+          description: "Question d'exemple utilisée. L'IA sera bientôt disponible !",
+          variant: "default"
+        });
+      }
+      
+    } catch (err) {
+      console.error('Critical error in question fetching:', err);
+      
+      // Dernier recours - garantir qu'une question est toujours fournie
       setQuestion(getEmergencyFallbackQuestion());
+      setError("Service temporairement indisponible");
       
       toast({
-        title: "Attention",
-        description: "Question de démonstration utilisée. Réessayez plus tard pour du contenu personnalisé.",
-        variant: "default"
+        title: "Service Indisponible",
+        description: "Utilisation d'une question d'exemple. Veuillez réessayer plus tard.",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
