@@ -25,6 +25,38 @@ const TIMER_DURATION = 30;
 const POINTS_PER_CORRECT_ANSWER = 10;
 const EXPLANATION_DELAY = 1000; // Delay before showing explanation
 
+// Fonction de validation robuste des questions
+function isValidQuizQuestion(question: any): question is QuizQuestion {
+  if (!question || typeof question !== 'object') {
+    return false;
+  }
+
+  // Validation des champs requis
+  const hasQuestion = typeof question.question === 'string' && question.question.trim().length > 0;
+  const hasOptions = Array.isArray(question.options) && question.options.length >= 2;
+  const hasValidAnswer = typeof question.correctAnswer === 'number' && 
+                        question.correctAnswer >= 0 && 
+                        question.correctAnswer < (question.options?.length || 0);
+  const hasExplanation = typeof question.explanation === 'string';
+
+  // Validation des options (toutes doivent être des strings non-vides)
+  const validOptions = question.options?.every((option: any) => 
+    typeof option === 'string' && option.trim().length > 0
+  );
+
+  return hasQuestion && hasOptions && hasValidAnswer && hasExplanation && validOptions;
+}
+
+// Question de secours garantie valide
+function getEmergencyFallbackQuestion(): QuizQuestion {
+  return {
+    question: "Quelle est la couleur du ciel par temps clair ?",
+    options: ["Rouge", "Vert", "Bleu", "Jaune"],
+    correctAnswer: 2,
+    explanation: "Le ciel apparaît bleu en raison de la diffusion de la lumière bleue par les particules dans l'atmosphère."
+  };
+}
+
 function QuizModal({ isOpen, onClose, skill, user }: QuizModalProps) {
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
   const [loading, setLoading] = useState(false);
@@ -64,18 +96,30 @@ function QuizModal({ isOpen, onClose, skill, user }: QuizModalProps) {
       const endTime = performance.now();
       console.log(`Question generation took ${(endTime - startTime).toFixed(2)}ms`);
       
-      if (result && result.question && result.options && typeof result.correctAnswer === 'number' && result.explanation) {
+      // Validation robuste du format de question
+      if (isValidQuizQuestion(result)) {
         setQuestion(result as QuizQuestion);
       } else {
-        throw new Error('Invalid question format received');
+        console.warn('Invalid question format received:', {
+          result,
+          hasQuestion: result?.question ? 'Yes' : 'No',
+          hasOptions: Array.isArray(result?.options) ? `Yes (${result.options.length})` : 'No',
+          hasCorrectAnswer: typeof result?.correctAnswer === 'number' ? 'Yes' : 'No',
+          hasExplanation: result?.explanation ? 'Yes' : 'No'
+        });
+        throw new Error(`Invalid question format: Missing required fields`);
       }
     } catch (err) {
       console.error('Question generation failed:', err);
-      setError("Failed to generate a question. Please try again.");
+      
+      // Utiliser la question de secours pour maintenir l'expérience utilisateur
+      console.log('Using emergency fallback question');
+      setQuestion(getEmergencyFallbackQuestion());
+      
       toast({
-        title: "Error",
-        description: "Could not fetch a new question.",
-        variant: "destructive"
+        title: "Attention",
+        description: "Question de démonstration utilisée. Réessayez plus tard pour du contenu personnalisé.",
+        variant: "default"
       });
     } finally {
       setLoading(false);
