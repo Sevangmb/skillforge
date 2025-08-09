@@ -2,7 +2,9 @@ import { User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Award } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Award, User as UserIcon } from "lucide-react";
+import Link from "next/link";
 
 interface ProfileCardProps {
   user: User;
@@ -26,9 +28,17 @@ export default function ProfileCard({ user }: ProfileCardProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="text-xs text-muted-foreground mb-1">Level {user.profile.level}</div>
-        <Progress value={levelProgress} className="h-2" />
+      <CardContent className="p-4 pt-0 space-y-3">
+        <div className="space-y-1">
+          <div className="text-xs text-muted-foreground mb-1">Level {user.profile.level}</div>
+          <Progress value={levelProgress} className="h-2" />
+        </div>
+        <Link href="/profile">
+          <Button variant="outline" size="sm" className="w-full">
+            <UserIcon className="w-3 h-3 mr-2" />
+            Voir le profil complet
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   );

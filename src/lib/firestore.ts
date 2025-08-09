@@ -81,30 +81,87 @@ export const saveSkillsToFirestore = async (skills: Skill[]): Promise<void> => {
 };
 
 export const getSkillsFromFirestore = async (retries = 2): Promise<Skill[]> => {
+  // Import mock data at runtime to avoid build issues
+  const getMockSkills = () => {
+    try {
+      // Dynamic import of mock skills data
+      const mockSkills: Skill[] = [
+        { 
+          id: 'general-knowledge' as any, 
+          name: 'Test de connaissances générales', 
+          description: 'Évaluez vos connaissances de base pour débloquer vos premières compétences.', 
+          icon: 'BrainCircuit', 
+          cost: 0, 
+          category: 'Évaluation Initiale' as any, 
+          position: { x: 450, y: 250 }, 
+          prereqs: [], 
+          level: 1, 
+          isSecret: false 
+        },
+        {
+          id: 'math-basics' as any,
+          name: 'Mathématiques de base',
+          description: 'Maîtrisez les fondamentaux des mathématiques.',
+          icon: 'Calculator',
+          cost: 100,
+          category: 'Mathématiques' as any,
+          position: { x: 300, y: 400 },
+          prereqs: ['general-knowledge' as any],
+          level: 2,
+          isSecret: false
+        },
+        {
+          id: 'science-intro' as any,
+          name: 'Introduction aux sciences',
+          description: 'Découvrez les bases des sciences naturelles.',
+          icon: 'Microscope',
+          cost: 150,
+          category: 'Sciences' as any,
+          position: { x: 600, y: 400 },
+          prereqs: ['general-knowledge' as any],
+          level: 2,
+          isSecret: false
+        }
+      ];
+      
+      console.log('🎮 Using mock skills data in demo mode');
+      return mockSkills;
+    } catch (error) {
+      console.error('Failed to load mock skills:', error);
+      return [];
+    }
+  };
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       if (!db) {
-        console.warn('Firestore is not initialized');
-        return [];
+        console.warn('🔧 Firestore not initialized, using mock data');
+        return getMockSkills();
       }
       
       const skillsCol = collection(db, 'skills');
       const skillSnapshot = await getDocs(skillsCol);
       const skills = skillSnapshot.docs.map(doc => doc.data() as Skill);
       
-      if (skills.length === 0 && attempt < retries) {
-        console.warn(`No skills found, attempt ${attempt + 1}/${retries + 1}`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-        continue;
+      if (skills.length === 0) {
+        if (attempt < retries) {
+          console.warn(`No skills found in Firestore, attempt ${attempt + 1}/${retries + 1}`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          continue;
+        } else {
+          console.warn('📋 No skills in Firestore, falling back to mock data');
+          return getMockSkills();
+        }
       }
       
+      console.log(`✅ Loaded ${skills.length} skills from Firestore`);
       return skills;
     } catch (error) {
       console.error(`Error getting skills from Firestore (attempt ${attempt + 1}):`, error);
       
       if (attempt === retries) {
-        // On final attempt, return empty array instead of throwing
-        return [];
+        console.warn('🔄 Firestore failed, using mock data as fallback');
+        return getMockSkills();
       }
       
       // Wait before retry with exponential backoff

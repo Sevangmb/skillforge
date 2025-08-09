@@ -1,8 +1,12 @@
 import { SidebarTrigger } from "./ui/sidebar";
 import AuthButton from "./auth/AuthButton";
 import AdminButton from "./admin/AdminButton";
+import ProfileButton from "./profile/ProfileButton";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Header() {
+  const { user } = useAuth();
+
   return (
     <header className="flex items-center justify-between p-4 border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
       <div className="flex items-center gap-4">
@@ -11,7 +15,7 @@ export default function Header() {
       </div>
       <div className="flex items-center gap-4">
         <AdminButton />
-        <AuthButton />
+        {user ? <ProfileButton /> : <AuthButton />}
       </div>
     </header>
   );
