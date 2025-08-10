@@ -5,7 +5,10 @@ import { cn } from "@/lib/utils";
 import { 
   Code, Database, Cloud, Cpu, GitBranch, Lock, Star, 
   Atom, FlaskConical, Dna, Scroll, Languages, Globe, 
-  Cog, BrainCircuit, Landmark, Milestone, Zap 
+  Cog, BrainCircuit, Landmark, Milestone, Zap,
+  Calculator, Variable, Shapes, BarChart,
+  Microscope, Monitor, Users, FileText,
+  Presentation, Target, Kanban, Server
 } from "lucide-react";
 
 interface SkillNodeProps {
@@ -23,6 +26,7 @@ const ICONS: Record<string, React.ElementType> = {
   GitBranch,
   Atom,
   FlaskConical,
+  Flask: FlaskConical, // Use FlaskConical as replacement for Flask
   Dna,
   Scroll,
   Languages,
@@ -30,8 +34,22 @@ const ICONS: Record<string, React.ElementType> = {
   Cog,
   Helix: Zap, // Use Zap as replacement for missing Helix icon
   BrainCircuit,
+  Brain: BrainCircuit, // Use BrainCircuit as replacement for Brain
   Landmark,
   Milestone,
+  Calculator,
+  Variable,
+  Shapes,
+  BarChart,
+  Function: Calculator, // Use Calculator as replacement for Function
+  Microscope,
+  Monitor,
+  Users,
+  FileText,
+  Presentation,
+  Target,
+  Kanban,
+  Server,
   Default: Star,
 } as const;
 
@@ -48,11 +66,26 @@ function SkillNode({ skill, status, onClick }: SkillNodeProps) {
   return (
     <div
       className={cn(
-        "absolute w-48 h-28 flex flex-col items-center justify-center p-2 border-2 rounded-lg transition-all duration-300 transform hover:-translate-y-1 shadow-lg",
-        statusStyles[status]
+        "absolute w-48 h-28 flex flex-col items-center justify-center p-2 border-2 rounded-lg transition-all duration-300 transform shadow-lg select-none",
+        statusStyles[status],
+        status === 'available' && "hover:-translate-y-1 hover:scale-105 cursor-pointer",
+        status === 'locked' && "cursor-not-allowed",
+        status === 'completed' && "cursor-pointer hover:scale-102",
+        status === 'secret' && "cursor-help"
       )}
       style={{ left: skill.position.x, top: skill.position.y }}
-      onClick={() => onClick(skill)}
+      onClick={() => {
+        // Only allow clicking on available skills
+        if (status === 'available') {
+          onClick(skill);
+        } else if (status === 'locked') {
+          // Show a tooltip or message about prerequisites
+          console.log('Skill locked - prerequisites not met');
+        } else if (status === 'completed') {
+          // Could show review option or stats
+          console.log('Skill already completed');
+        }
+      }}
     >
       <div className="flex items-center gap-2">
         {status === "locked" || status === "secret" ? <Lock className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
@@ -65,6 +98,22 @@ function SkillNode({ skill, status, onClick }: SkillNodeProps) {
         <Star className="w-3 h-3 text-yellow-400" />
         <span>{skill.cost}</span>
       </div>
+      
+      {/* Status indicator */}
+      {status === 'available' && (
+        <div className="absolute top-1 right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" 
+             title="Cliquez pour commencer le quiz !" />
+      )}
+      {status === 'completed' && (
+        <div className="absolute top-1 right-1 w-3 h-3 bg-blue-500 rounded-full" 
+             title="Compétence maîtrisée" />
+      )}
+      {status === 'locked' && (
+        <div className="absolute top-1 left-1 w-4 h-4 text-gray-400" 
+             title="Terminez les prérequis d'abord">
+          <Lock className="w-4 h-4" />
+        </div>
+      )}
     </div>
   );
 }

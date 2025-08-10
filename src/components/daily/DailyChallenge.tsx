@@ -11,6 +11,7 @@ import { getDailyQuizChallengeAction, completeDailyChallengeAction } from '@/app
 import { useToast } from '@/hooks/use-toast';
 import type { DailyQuizChallenge, QuizStep } from '@/lib/types';
 import { hybridQuizService } from '@/lib/hybrid-quiz-service';
+import { logger } from '@/lib/logger';
 
 interface DailyChallengeProps {
   className?: string;
@@ -55,12 +56,38 @@ export function DailyChallenge({ className }: DailyChallengeProps) {
 
   const loadStepDetails = async (stepId: string) => {
     try {
+      if (!stepId) {
+        logger.warn('No stepId provided for daily challenge', {
+          action: 'daily_challenge_no_step_id'
+        });
+        return;
+      }
+
+      logger.info('Loading step details for daily challenge', {
+        action: 'daily_challenge_load_step',
+        stepId
+      });
+
       const step = await hybridQuizService.getStepDetails(stepId);
       if (step) {
         setCurrentStep(step);
+        logger.info('Step details loaded successfully for daily challenge', {
+          action: 'daily_challenge_step_loaded',
+          stepId: step.id,
+          skillId: step.skillId
+        });
+      } else {
+        logger.warn('No step details found for daily challenge', {
+          action: 'daily_challenge_step_not_found',
+          stepId
+        });
       }
     } catch (error) {
-      console.error('Failed to load step details:', error);
+      logger.error('Failed to load step details for daily challenge', {
+        action: 'daily_challenge_step_error',
+        stepId,
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   };
 

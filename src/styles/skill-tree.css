@@ -1,0 +1,91 @@
+/* Skill Tree Component Styles */
+
+:root {
+  /* Skill status colors */
+  --skill-completed: #10b981;
+  --skill-available: #3b82f6;
+  --skill-locked: #6b7280;
+  --skill-secret: #8b5cf6;
+  
+  /* Skill status backgrounds */
+  --skill-completed-bg: rgba(16, 185, 129, 0.1);
+  --skill-available-bg: rgba(59, 130, 246, 0.1);
+  --skill-locked-bg: rgba(107, 114, 128, 0.1);
+  --skill-secret-bg: rgba(139, 92, 246, 0.1);
+}
+
+/* Skill node animations */
+@keyframes skill-unlock {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes skill-complete {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 30px var(--skill-completed);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.skill-node-unlocked {
+  animation: skill-unlock 0.6s ease-out;
+}
+
+.skill-node-completed {
+  animation: skill-complete 0.8s ease-out;
+}
+
+/* Skill tree container */
+.skill-tree-container {
+  background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+}
+
+/* Skill connections */
+.skill-connection {
+  stroke-dasharray: 5,5;
+  animation: dash 20s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+.skill-connection-active {
+  stroke-dasharray: none;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 3px var(--skill-available));
+}
+
+/* Status indicators */
+.skill-status-available {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.skill-status-completed {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.skill-status-locked {
+  filter: grayscale(50%);
+}
+
+.skill-status-secret {
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.7);
+}

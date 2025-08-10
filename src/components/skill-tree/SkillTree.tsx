@@ -7,6 +7,7 @@ import SkillNode from './SkillNode';
 import SkillConnection from './SkillConnection';
 import { useThrottledMouseCallback } from '@/hooks/useThrottledCallback';
 import { getSkillStatus } from '@/lib/utils';
+import '@/styles/skill-tree.css';
 
 interface SkillTreeProps {
   skills: Skill[];
@@ -42,6 +43,21 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   const [isPanning, setIsPanning] = useState(false);
   const lastPanPoint = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Show empty state if no skills
+  if (!skills || skills.length === 0) {
+    return (
+      <div className="w-full h-full bg-background overflow-hidden relative flex items-center justify-center">
+        <Starfield />
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground text-lg">Aucune compétence disponible</p>
+          <p className="text-sm text-muted-foreground">
+            Les compétences se chargeront automatiquement une fois disponibles.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const skillMap = useMemo(() => {
     const map = new Map<string, Skill>();
@@ -122,7 +138,7 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   return (
     <div
       ref={containerRef}
-      className="w-full h-full bg-background overflow-hidden relative cursor-grab"
+      className="w-full h-full bg-background overflow-hidden relative cursor-grab skill-tree-container"
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
