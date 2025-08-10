@@ -3,7 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { logger } from './logger';
 
-const firebaseConfig = {
+const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -12,47 +12,56 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Validate configuration values (not environment variables)
-const requiredConfigValues = ['apiKey', 'authDomain', 'projectId'];
-const missingConfigValues = requiredConfigValues.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
 
-if (missingConfigValues.length > 0) {
-  console.error('Missing required Firebase configuration values:', missingConfigValues);
-}
-
-// Always initialize Firebase with valid config
-const isValidConfig = firebaseConfig.apiKey && 
-  firebaseConfig.authDomain && 
-  firebaseConfig.projectId;
-
-// Initialize Firebase
+// Validate configuration and initialize Firebase
 let app;
-if (isValidConfig) {
+let auth;
+let db;
+
+if (isBrowser && firebaseConfig.apiKey && firebaseConfig.projectId) {
   try {
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    
-    // Log successful initialization
-    logger.info('Firebase initialized successfully', {
-      action: 'firebase_init_success',
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApp();
+    }
+    auth = getAuth(app);
+    db = getFirestore(app);
+
+    logger.info('Firebase initialized successfully in browser', {
+      action: 'firebase_client_init_success',
       context: { projectId: firebaseConfig.projectId }
     });
   } catch (error) {
-    logger.error('Firebase initialization failed', {
-      action: 'firebase_init_failed',
+    logger.error('Firebase initialization failed in browser', {
+      action: 'firebase_client_init_failed',
       error: error instanceof Error ? error.message : String(error)
     });
     app = null;
+    auth = null;
+    db = null;
   }
-} else {
-  logger.error('Firebase not initialized - invalid configuration', {
-    action: 'firebase_config_invalid',
-    context: { missingValues: missingConfigValues }
+} else if (!isBrowser) {
+  // Handle SSR: app, auth, and db will be undefined
+  logger.debug('Firebase deferred on server-side', {
+    action: 'firebase_ssr_deferred'
   });
-  app = null;
+} else {
+  // Handle missing required environment variables in the browser
+  const requiredEnvVars = [
+    'NEXT_PUBLIC_FIREBASE_API_KEY',
+    'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
+    'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+  ];
+  const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+  if (missingEnvVars.length > 0) {
+    logger.error('Missing required Firebase environment variables', {
+      action: 'firebase_config_missing_vars',
+      missingVariables: missingEnvVars
+    });
+  }
 }
 
-// Initialize Firebase services with null checks
-export const auth = app ? getAuth(app) : null;
-export const db = app ? getFirestore(app) : null;
-
-export default app;
+export { app, auth, db };
