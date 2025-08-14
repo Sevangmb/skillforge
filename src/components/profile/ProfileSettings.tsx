@@ -22,6 +22,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { profileService } from '@/lib/firebase-profile-service';
 
 interface ProfileSettingsProps {
   user: User;
@@ -38,6 +39,13 @@ interface FormData {
     daily: boolean;
     weekly: boolean;
   };
+  coachSettings: {
+    enabled: boolean;
+    insightFrequency: 'low' | 'medium' | 'high';
+    recommendationsEnabled: boolean;
+    adaptiveLearning: boolean;
+    analysisMode: 'basic' | 'advanced';
+  };
 }
 
 export default function ProfileSettings({ user }: ProfileSettingsProps) {
@@ -51,6 +59,13 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
       achievements: true,
       daily: true,
       weekly: false
+    },
+    coachSettings: {
+      enabled: true,
+      insightFrequency: 'medium',
+      recommendationsEnabled: true,
+      adaptiveLearning: true,
+      analysisMode: 'advanced'
     }
   });
 
@@ -71,6 +86,13 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
         achievements: true,
         daily: true,
         weekly: false
+      },
+      coachSettings: {
+        enabled: true,
+        insightFrequency: 'medium' as const,
+        recommendationsEnabled: true,
+        adaptiveLearning: true,
+        analysisMode: 'advanced' as const
       }
     };
 
@@ -115,9 +137,29 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
     setIsSaving(true);
     
     try {
-      // TODO: Implement save functionality with Firebase
-      // This would include security checks and data validation
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Préparer les données à sauvegarder
+      const profileData = {
+        displayName: formData.displayName,
+        email: formData.email,
+      };
+
+      const preferencesData = {
+        learningStyle: formData.learningStyle,
+        adaptiveMode: formData.adaptiveMode,
+        language: formData.language,
+        notifications: formData.notifications,
+        coachSettings: formData.coachSettings
+      };
+
+      // Sauvegarder via Firebase
+      const result = await profileService.updateUserProfile(user.uid, {
+        profile: profileData,
+        preferences: preferencesData
+      });
+
+      if (!result.success) {
+        throw result.error;
+      }
       
       setLastSaved(new Date());
       setHasChanges(false);
@@ -128,11 +170,16 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
         description: "Vos modifications ont été enregistrées avec succès.",
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur inattendue s\'est produite';
+      
       toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder les paramètres. Veuillez réessayer.",
+        title: "Erreur de sauvegarde",
+        description: `Impossible de sauvegarder les paramètres: ${errorMessage}`,
         variant: "destructive",
       });
+
+      // Log error for debugging
+      console.error('Profile save error:', error);
     } finally {
       setIsSaving(false);
     }
@@ -149,6 +196,13 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
         achievements: true,
         daily: true,
         weekly: false
+      },
+      coachSettings: {
+        enabled: true,
+        insightFrequency: 'medium',
+        recommendationsEnabled: true,
+        adaptiveLearning: true,
+        analysisMode: 'advanced'
       }
     });
   };
@@ -324,6 +378,124 @@ export default function ProfileSettings({ user }: ProfileSettingsProps) {
                 <SelectItem value="ko">한국어</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Coach Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5" />
+            Paramètres du Coach IA
+          </CardTitle>
+          <CardDescription>
+            Configurez votre assistant d'apprentissage intelligent
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="font-medium">Activer le Coach IA</Label>
+              <p className="text-sm text-muted-foreground">
+                Active l'assistant d'apprentissage intelligent avec analyses et recommandations
+              </p>
+            </div>
+            <Switch
+              checked={formData.coachSettings.enabled}
+              onCheckedChange={(checked) =>
+                setFormData(prev => ({
+                  ...prev,
+                  coachSettings: { ...prev.coachSettings, enabled: checked }
+                }))
+              }
+            />
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label>Fréquence des insights</Label>
+            <Select
+              value={formData.coachSettings.insightFrequency}
+              onValueChange={(value: 'low' | 'medium' | 'high') =>
+                setFormData(prev => ({
+                  ...prev,
+                  coachSettings: { ...prev.coachSettings, insightFrequency: value }
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Faible - Insights hebdomadaires</SelectItem>
+                <SelectItem value="medium">Modérée - Insights tous les 2-3 jours</SelectItem>
+                <SelectItem value="high">Élevée - Insights quotidiens</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="font-medium">Recommandations intelligentes</Label>
+              <p className="text-sm text-muted-foreground">
+                Recevoir des recommandations personnalisées basées sur vos performances
+              </p>
+            </div>
+            <Switch
+              checked={formData.coachSettings.recommendationsEnabled}
+              onCheckedChange={(checked) =>
+                setFormData(prev => ({
+                  ...prev,
+                  coachSettings: { ...prev.coachSettings, recommendationsEnabled: checked }
+                }))
+              }
+            />
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="font-medium">Apprentissage adaptatif</Label>
+              <p className="text-sm text-muted-foreground">
+                Ajuste automatiquement la difficulté selon vos performances
+              </p>
+            </div>
+            <Switch
+              checked={formData.coachSettings.adaptiveLearning}
+              onCheckedChange={(checked) =>
+                setFormData(prev => ({
+                  ...prev,
+                  coachSettings: { ...prev.coachSettings, adaptiveLearning: checked }
+                }))
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Mode d'analyse</Label>
+            <Select
+              value={formData.coachSettings.analysisMode}
+              onValueChange={(value: 'basic' | 'advanced') =>
+                setFormData(prev => ({
+                  ...prev,
+                  coachSettings: { ...prev.coachSettings, analysisMode: value }
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="basic">Basique - Analyses simples et rapides</SelectItem>
+                <SelectItem value="advanced">Avancé - Analyses détaillées et prédictives</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Le mode avancé fournit des analyses plus approfondies mais consomme plus de ressources
+            </p>
           </div>
         </CardContent>
       </Card>

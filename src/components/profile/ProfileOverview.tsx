@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from 'react';
+// Avatar upload functionality now handled by AvatarUpload component
 import { User } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+// Avatar and upload button now handled by AvatarUpload component
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -15,19 +14,18 @@ import {
   Trophy, 
   Target, 
   Clock,
-  Edit3,
-  Upload,
   Star
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import AvatarUpload from './AvatarUpload';
 
 interface ProfileOverviewProps {
   user: User;
 }
 
 export default function ProfileOverview({ user }: ProfileOverviewProps) {
-  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
+  // Avatar upload state management now handled by AvatarUpload component
   
   // Calculate level progress (assuming max level 100)
   const levelProgress = (user.profile.level / 100) * 100;
@@ -49,14 +47,7 @@ export default function ProfileOverview({ user }: ProfileOverviewProps) {
     ? scoresWithValues.reduce((acc, score) => acc + score, 0) / scoresWithValues.length
     : 0;
 
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // TODO: Implement avatar upload logic
-      console.log('Avatar upload:', file);
-      setIsEditingAvatar(false);
-    }
-  };
+  // Avatar upload functionality moved to AvatarUpload component
 
   return (
     <div className="space-y-6">
@@ -75,42 +66,11 @@ export default function ProfileOverview({ user }: ProfileOverviewProps) {
           <div className="flex items-start gap-6">
             {/* Avatar Section */}
             <div className="flex flex-col items-center space-y-3">
-              <div className="relative group">
-                <Avatar className="h-24 w-24 border-2 border-border">
-                  <AvatarImage 
-                    src={user.profile.avatar || `https://placehold.co/150x150.png?text=${user.profile.displayName.charAt(0)}`} 
-                  />
-                  <AvatarFallback className="text-xl font-semibold">
-                    {user.profile.displayName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => setIsEditingAvatar(!isEditingAvatar)}
-                >
-                  <Edit3 className="h-3 w-3" />
-                </Button>
-              </div>
-              
-              {isEditingAvatar && (
-                <div className="text-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                    id="avatar-upload"
-                  />
-                  <label htmlFor="avatar-upload">
-                    <Button variant="outline" size="sm" className="cursor-pointer">
-                      <Upload className="h-3 w-3 mr-2" />
-                      Changer
-                    </Button>
-                  </label>
-                </div>
-              )}
+              <AvatarUpload 
+                userId={user.id}
+                currentAvatarUrl={user.profile.avatar}
+                displayName={user.profile.displayName}
+              />
             </div>
 
             {/* Profile Info */}

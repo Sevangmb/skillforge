@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAchievements } from "@/hooks/useAchievements";
 import { logger } from "@/lib/logger";
 import { FeatureErrorBoundary } from "@/components/ErrorBoundary";
+import AILearningCoach from "@/components/coach/AILearningCoach";
 
 interface DashboardProps {
   readonly currentUser: User;
@@ -34,7 +35,7 @@ interface DashboardProps {
 interface DashboardState {
   selectedSkill: Skill | null;
   leaderboardUsers: User[];
-  activeTab: 'skills' | 'achievements';
+  activeTab: 'skills' | 'achievements' | 'coach';
 }
 
 function Dashboard({ currentUser }: DashboardProps) {
@@ -148,7 +149,7 @@ function Dashboard({ currentUser }: DashboardProps) {
   }, [updateState]);
   
   const handleTabChange = useCallback((value: string) => {
-    updateState({ activeTab: value as 'skills' | 'achievements' });
+    updateState({ activeTab: value as 'skills' | 'achievements' | 'coach' });
   }, [updateState]);
 
   // Fonction de retry utilisant le hook useSkills
@@ -229,7 +230,7 @@ function Dashboard({ currentUser }: DashboardProps) {
               ) : (
                 <Tabs value={state.activeTab} onValueChange={handleTabChange} className="h-full">
                   <div className="border-b px-4">
-                    <TabsList className="grid w-full grid-cols-2 max-w-md">
+                    <TabsList className="grid w-full grid-cols-3 max-w-lg">
                       <TabsTrigger value="skills" className="flex items-center space-x-2">
                         <span>🌳 Compétences</span>
                         {skillsLoading && (
@@ -244,6 +245,9 @@ function Dashboard({ currentUser }: DashboardProps) {
                             {recentlyUnlocked.length}
                           </span>
                         )}
+                      </TabsTrigger>
+                      <TabsTrigger value="coach" className="flex items-center space-x-2">
+                        <span>🧠 Coach IA</span>
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -286,6 +290,23 @@ function Dashboard({ currentUser }: DashboardProps) {
                       </div>
                       
                       <SmartAchievementDisplay />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="coach" className="h-full mt-0">
+                    <div className="h-full overflow-y-auto">
+                      <div className="p-6 space-y-6">
+                        <div className="text-center">
+                          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                            Coach IA Personnel
+                          </h2>
+                          <p className="text-gray-600 mb-6">
+                            Votre assistant d'apprentissage intelligent analyse vos performances et vous guide vers le succès
+                          </p>
+                        </div>
+
+                        <AILearningCoach className="max-w-4xl mx-auto" />
+                      </div>
                     </div>
                   </TabsContent>
                 </Tabs>
