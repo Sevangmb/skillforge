@@ -6,14 +6,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, TrendingUp, Target, BookOpen } from 'lucide-react';
 import DailyChallenge from './DailyChallenge';
 import QuizPathOverview from './QuizPathOverview';
+import QuizModal from '@/components/quiz/QuizModal';
 import FirebaseDebug from '@/components/debug/FirebaseDebug';
 import DemoModeIndicator from '@/components/dev/DemoModeIndicator';
+import { useAppStore } from '@/stores/useAppStore';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DailyDashboardProps {
   className?: string;
 }
 
 export function DailyDashboard({ className }: DailyDashboardProps) {
+  const { user } = useAuth();
+  const { selectedSkill, setSelectedSkill } = useAppStore();
+
+  const handleCloseQuiz = () => {
+    setSelectedSkill(null);
+  };
+
   return (
     <div className={`space-y-6 ${className}`}>
       {/* En-tête du tableau de bord */}
@@ -143,6 +153,14 @@ export function DailyDashboard({ className }: DailyDashboardProps) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Quiz Modal */}
+      <QuizModal
+        isOpen={!!selectedSkill}
+        onClose={handleCloseQuiz}
+        skill={selectedSkill}
+        user={user}
+      />
     </div>
   );
 }

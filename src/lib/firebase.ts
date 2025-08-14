@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { logger } from './logger';
+import { logger, withRetry, CircuitBreaker } from './logger';
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -63,5 +63,66 @@ if (isBrowser && firebaseConfig.apiKey && firebaseConfig.projectId) {
     });
   }
 }
+
+// Circuit breaker for Firebase operations
+export const firebaseCircuitBreaker = new CircuitBreaker(3, 30000, 'firebase');
+
+// Enhanced Firebase operations with retry and circuit breaker
+export const withFirebaseResilience = async <T>(
+  operation: () => Promise<T>,
+  operationName: string = 'firebase-operation'
+): Promise<T> => {
+  return firebaseCircuitBreaker.execute(() =>
+    withRetry(operation, {
+      maxAttempts: 3,
+      baseDelay: 1000,
+      operationName,
+      shouldRetry: (error) => {
+        // Only retry on network errors, not on authentication or permission errors
+        const errorMessage = error instanceof Error ? error.message.toLowerCase() : '';
+        return errorMessage.includes('network') || 
+               errorMessage.includes('timeout') ||
+               errorMessage.includes('unavailable');
+      }
+    })
+  );
+};
+
+// Connection state management
+export const getFirebaseConnection = () => {
+  const isConfigured = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
+  const isInitialized = !!(app && auth && db);
+  
+  return {
+    isConfigured,
+    isInitialized,
+    isBrowser,
+    hasValidConnection: isConfigured && isInitialized && isBrowser,
+    projectId: firebaseConfig.projectId,
+  };
+};
+
+// Health check function
+export const checkFirebaseHealth = async (): Promise<boolean> => {
+  if (!db) {
+    logger.warn('Firebase health check failed: No database connection');
+    return false;
+  }
+
+  try {
+    // Try to perform a simple read operation to test connection
+    const { getDocs, collection, limit, query } = await import('firebase/firestore');
+    const testQuery = query(collection(db, 'health-check'), limit(1));
+    await getDocs(testQuery);
+    logger.debug('Firebase health check passed');
+    return true;
+  } catch (error) {
+    logger.errorWithStack(error, 'Firebase health check failed', {
+      operation: 'firebase_health_check',
+      component: 'firebase'
+    });
+    return false;
+  }
+};
 
 export { app, auth, db };

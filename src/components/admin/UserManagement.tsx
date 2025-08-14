@@ -35,13 +35,14 @@ import {
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { getRoleInfo, canManageUser } from '@/lib/admin/permissions';
-import type { User } from '@/lib/types';
+import type { User, UserId } from '@/lib/types';
 import type { UserRole } from '@/lib/types/admin';
 
 // Mock data - in real app, this would come from Firestore
 const MOCK_USERS: Array<User & { role: UserRole; lastLogin: Date; status: 'active' | 'banned' }> = [
   {
-    id: '1',
+    id: '1' as UserId,
+    uid: '1' as UserId,
     profile: {
       displayName: 'Sébastien Evans',
       email: 'sevans@hotmail.fr',
@@ -50,9 +51,9 @@ const MOCK_USERS: Array<User & { role: UserRole; lastLogin: Date; status: 'activ
     },
     competences: {},
     preferences: {
-      learningStyle: 'visual',
-      favoriteTopics: ['frontend', 'javascript'],
-      adaptiveMode: 'auto',
+      learningStyle: 'Visual',
+      favoriteTopics: ['Informatique', 'Informatique'],
+      adaptiveMode: 'Default',
       language: 'fr'
     },
     role: 'super_admin',
@@ -60,7 +61,8 @@ const MOCK_USERS: Array<User & { role: UserRole; lastLogin: Date; status: 'activ
     status: 'active'
   },
   {
-    id: '2',
+    id: '2' as UserId,
+    uid: '2' as UserId,
     profile: {
       displayName: 'Alice Dupont',
       email: 'alice.dupont@email.com',
@@ -69,9 +71,9 @@ const MOCK_USERS: Array<User & { role: UserRole; lastLogin: Date; status: 'activ
     },
     competences: {},
     preferences: {
-      learningStyle: 'hands-on',
-      favoriteTopics: ['backend', 'databases'],
-      adaptiveMode: 'guided',
+      learningStyle: 'Kinesthetic',
+      favoriteTopics: ['Informatique', 'Informatique'],
+      adaptiveMode: 'Focus',
       language: 'fr'
     },
     role: 'moderator',
@@ -79,7 +81,8 @@ const MOCK_USERS: Array<User & { role: UserRole; lastLogin: Date; status: 'activ
     status: 'active'
   },
   {
-    id: '3',
+    id: '3' as UserId,
+    uid: '3' as UserId,
     profile: {
       displayName: 'Bob Martin',
       email: 'bob.martin@email.com',
@@ -88,9 +91,9 @@ const MOCK_USERS: Array<User & { role: UserRole; lastLogin: Date; status: 'activ
     },
     competences: {},
     preferences: {
-      learningStyle: 'reading',
-      favoriteTopics: ['design', 'ux'],
-      adaptiveMode: 'auto',
+      learningStyle: 'Reading',
+      favoriteTopics: ['Compétences transversales', 'Compétences transversales'],
+      adaptiveMode: 'Default',
       language: 'en'
     },
     role: 'user',
@@ -98,7 +101,8 @@ const MOCK_USERS: Array<User & { role: UserRole; lastLogin: Date; status: 'activ
     status: 'active'
   },
   {
-    id: '4',
+    id: '4' as UserId,
+    uid: '4' as UserId,
     profile: {
       displayName: 'Charlie Brown',
       email: 'charlie.brown@email.com',
@@ -107,9 +111,9 @@ const MOCK_USERS: Array<User & { role: UserRole; lastLogin: Date; status: 'activ
     },
     competences: {},
     preferences: {
-      learningStyle: 'visual',
+      learningStyle: 'Visual',
       favoriteTopics: [],
-      adaptiveMode: 'auto',
+      adaptiveMode: 'Default',
       language: 'en'
     },
     role: 'user',

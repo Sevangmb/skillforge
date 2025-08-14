@@ -24,7 +24,13 @@ export async function generateQuizQuestionAction(input: GenerateQuizQuestionInpu
   try {
     const result = await resilientAIService.generateQuestion(input);
     monitor.end(true);
-    return result;
+    // Ensure compatibility with GenerateQuizQuestionOutput type
+    return {
+      question: result.question,
+      options: [...result.options], // Convert readonly array to mutable array
+      correctAnswer: result.correctAnswer,
+      explanation: result.explanation,
+    };
   } catch (error) {
     monitor.end(false);
     logger.error("AI quiz question generation failed", {

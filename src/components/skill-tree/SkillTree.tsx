@@ -44,7 +44,70 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
   const lastPanPoint = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Show empty state if no skills
+  // Move all hooks before any early returns
+  const skillMap = useMemo(() => {
+    if (!skills || skills.length === 0) return new Map<string, Skill>();
+    const map = new Map<string, Skill>();
+    skills.forEach(skill => map.set(skill.id, skill));
+    return map;
+  }, [skills]);
+  
+  const completedSkillIds = useMemo(() => 
+    new Set(Object.keys(user.competences || {}).filter(id => user.competences[id]?.completed)),
+    [user.competences]
+  );
+  
+  const visibleSkills = useMemo(() => {
+    if (!skills || skills.length === 0) return [];
+    return skills.filter(skill => {
+        if (!skill.prereqs || skill.prereqs.length === 0) {
+            return true;
+        }
+        return skill.prereqs.every(prereqId => completedSkillIds.has(prereqId));
+    });
+  }, [skills, completedSkillIds]);
+
+  // Move all callback hooks before early return
+  const handleMouseMoveBase = useCallback((e: MouseEvent<HTMLDivElement>) => {
+    if (!isPanning) return;
+    const dx = e.pageX - lastPanPoint.current.x;
+    const dy = e.pageY - lastPanPoint.current.y;
+    lastPanPoint.current = { x: e.pageX, y: e.pageY };
+    setView(v => ({ ...v, x: v.x + dx, y: v.y + dy }));
+  }, [isPanning]);
+
+  const handleMouseMove = useThrottledMouseCallback(handleMouseMoveBase, 8);
+
+  const handleWheelBase = useCallback((e: WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const scaleAmount = e.deltaY > 0 ? -0.1 : 0.1;
+    let newScale = view.scale + scaleAmount;
+    newScale = Math.min(Math.max(0.3, newScale), 1.5);
+    
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const dx = (mouseX - centerX) * (newScale - view.scale) / view.scale;
+    const dy = (mouseY - centerY) * (newScale - view.scale) / view.scale;
+
+    setView(v => ({
+      ...v,
+      scale: newScale,
+      x: v.x - dx,
+      y: v.y - dy
+    }));
+  }, [view.scale]);
+
+  const handleWheel = useThrottledMouseCallback(handleWheelBase, 8);
+
+  const getStatus = useCallback((skill: Skill) => getSkillStatus(skill, user), [user]);
+  
+  // Show empty state if no skills - moved after hooks
   if (!skills || skills.length === 0) {
     return (
       <div className="w-full h-full bg-background overflow-hidden relative flex items-center justify-center">
@@ -58,27 +121,6 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
       </div>
     );
   }
-
-  const skillMap = useMemo(() => {
-    const map = new Map<string, Skill>();
-    skills.forEach(skill => map.set(skill.id, skill));
-    return map;
-  }, [skills]);
-  
-  const completedSkillIds = useMemo(() => 
-    new Set(Object.keys(user.competences).filter(id => user.competences[id].completed)),
-    [user.competences]
-  );
-  
-  const visibleSkills = useMemo(() => {
-    return skills.filter(skill => {
-        if (!skill.prereqs || skill.prereqs.length === 0) {
-            return true;
-        }
-        return skill.prereqs.every(prereqId => completedSkillIds.has(prereqId));
-    });
-  }, [skills, completedSkillIds]);
-
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -102,38 +144,6 @@ export default function SkillTree({ skills, user, onNodeClick }: SkillTreeProps)
       e.currentTarget.style.cursor = 'grab';
     }
   };
-
-  const handleMouseMoveBase = useCallback((e: MouseEvent<HTMLDivElement>) => {
-    if (!isPanning) return;
-    const dx = e.pageX - lastPanPoint.current.x;
-    const dy = e.pageY - lastPanPoint.current.y;
-    lastPanPoint.current = { x: e.pageX, y: e.pageY };
-    setView(v => ({ ...v, x: v.x + dx, y: v.y + dy }));
-  }, [isPanning]);
-
-  const handleMouseMove = useThrottledMouseCallback(handleMouseMoveBase, 8);
-
-  const handleWheelBase = useCallback((e: WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const scaleAmount = e.deltaY > 0 ? -0.1 : 0.1;
-    let newScale = view.scale + scaleAmount;
-    newScale = Math.min(Math.max(0.3, newScale), 1.5); // Fix min/max order
-    
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const newX = mouseX - (mouseX - view.x) * (newScale / view.scale);
-    const newY = mouseY - (mouseY - view.y) * (newScale / view.scale);
-
-    setView({ scale: newScale, x: newX, y: newY });
-  }, [view]);
-
-  const handleWheel = useThrottledMouseCallback(handleWheelBase, 10);
-  
-  const getStatus = useCallback((skill: Skill) => getSkillStatus(skill, user), [user]);
 
   return (
     <div

@@ -150,21 +150,36 @@ class HybridQuizService {
       const skills = await productionDataService.getSkills();
       const categories = [...new Set(skills.map(s => s.category))];
       
-      return categories.slice(0, limit).map((category, index) => ({
-        id: `path_${category.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
-        name: `Parcours ${category}`,
-        description: `Maîtrisez les compétences en ${category}`,
-        steps: skills.filter(s => s.category === category).slice(0, 3).map((skill, stepIndex) => ({
+      return categories.slice(0, limit).map((category, index) => {
+        const categorySkills = skills.filter(s => s.category === category).slice(0, 3);
+        const pathSteps = categorySkills.map((skill, stepIndex) => ({
           id: `step_${skill.id}`,
           skillId: skill.id,
           order: stepIndex + 1,
           isCompleted: false,
           estimatedDuration: 15
-        })),
-        createdAt: new Date(),
-        isCompleted: false,
-        difficulty: 'intermediate' as const
-      }));
+        }));
+        
+        // Calculate aggregated values
+        const totalSteps = pathSteps.length;
+        const currentStep = pathSteps.filter(step => step.isCompleted).length + 1;
+        const estimatedDuration = pathSteps.reduce((total, step) => total + step.estimatedDuration, 0);
+        const pointsToEarn = categorySkills.reduce((total, skill) => total + (skill.cost || 50), 0);
+        
+        return {
+          id: `path_${category.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
+          name: `Parcours ${category}`,
+          description: `Maîtrisez les compétences en ${category}`,
+          steps: pathSteps,
+          currentStep: Math.min(currentStep, totalSteps),
+          totalSteps,
+          estimatedDuration,
+          pointsToEarn,
+          createdAt: new Date(),
+          isCompleted: false,
+          difficulty: 'intermediate' as const
+        };
+      });
     } catch (error) {
       logger.error('Failed to get active paths', {
         action: 'get_active_paths_error',

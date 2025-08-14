@@ -11,6 +11,8 @@ import { generateQuizPathAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { QuizPath } from '@/lib/types';
 import { hybridQuizService } from '@/lib/hybrid-quiz-service';
+import { productionDataService } from '@/lib/production-data-service';
+import { useAppStore } from '@/stores/useAppStore';
 
 interface QuizPathOverviewProps {
   className?: string;
@@ -22,6 +24,7 @@ export function QuizPathOverview({ className }: QuizPathOverviewProps) {
   const [activePaths, setActivePaths] = useState<QuizPath[]>([]);
   const [loading, setLoading] = useState(true);
   const [generatingPath, setGeneratingPath] = useState(false);
+  const { setSelectedSkill } = useAppStore();
 
   const loadActivePaths = useCallback(async () => {
     if (!user) return;
@@ -108,6 +111,58 @@ export function QuizPathOverview({ className }: QuizPathOverviewProps) {
       case 'intermediate': return 'Intermédiaire';
       case 'advanced': return 'Avancé';
       default: return difficulty;
+    }
+  };
+
+  const handleContinuePath = async (path: QuizPath) => {
+    try {
+      // Get the current step based on progress
+      const currentStepIndex = path.currentStep - 1;
+      const currentPathStep = path.steps?.[currentStepIndex];
+      
+      if (!currentPathStep) {
+        console.error('No current step found for path:', path.id);
+        toast({
+          title: "Erreur",
+          description: "Impossible de trouver l'étape actuelle du parcours",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Extract the skill ID from the step
+      const skillId = currentPathStep.skillId;
+      
+      // Get all skills from production data service
+      const allSkills = await productionDataService.getSkills();
+      const skill = allSkills.find(s => s.id === skillId);
+      
+      if (!skill) {
+        console.error('Skill not found:', skillId);
+        toast({
+          title: "Erreur", 
+          description: "Compétence introuvable",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Set the selected skill to open the quiz modal
+      setSelectedSkill(skill);
+      
+      toast({
+        title: "Quiz lancé !",
+        description: `Démarrage du test pour ${skill.name}`,
+        className: "bg-green-500 text-white"
+      });
+
+    } catch (error) {
+      console.error('Error launching quiz from path:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de lancer le quiz",
+        variant: "destructive"
+      });
     }
   };
 
@@ -205,7 +260,7 @@ export function QuizPathOverview({ className }: QuizPathOverviewProps) {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Progression</span>
                         <span className="font-medium">
-                          {path.currentStep}/{path.totalSteps} étapes
+                          {path.currentStep || 1}/{path.totalSteps || 0} étapes
                         </span>
                       </div>
                       <Progress value={progress} className="h-2" />
@@ -214,15 +269,19 @@ export function QuizPathOverview({ className }: QuizPathOverviewProps) {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
-                            ~{path.estimatedDuration} min
+                            ~{path.estimatedDuration || 0} min
                           </div>
                           <div className="flex items-center gap-1">
                             <Trophy className="h-4 w-4" />
-                            Points à gagner
+                            {path.pointsToEarn || 0} points
                           </div>
                         </div>
                         
-                        <Button size="sm" className="ml-4">
+                        <Button 
+                          size="sm" 
+                          className="ml-4"
+                          onClick={() => handleContinuePath(path)}
+                        >
                           Continuer
                           <ArrowRight className="ml-1 h-4 w-4" />
                         </Button>

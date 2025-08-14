@@ -369,7 +369,7 @@ export default function ProfileStatistics({ user }: ProfileStatisticsProps) {
                 <p className="text-2xl font-bold">
                   {mockTimeData.filter(d => d.minutes > 30).length}
                 </p>
-                <p className="text-sm text-muted-foreground">Jours > 30min</p>
+                <p className="text-sm text-muted-foreground">Jours {'>'}= 30min</p>
               </CardContent>
             </Card>
           </div>

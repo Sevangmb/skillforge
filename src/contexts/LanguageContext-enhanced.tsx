@@ -1,6 +1,6 @@
 /**
  * SkillForge AI - Enhanced Language Context
- * Performance-optimized internationalization with intelligent caching
+ * Optimized React context for internationalization with intelligent caching and performance optimizations
  */
 
 "use client";
@@ -20,9 +20,15 @@ import {
   SUPPORTED_LANGUAGES, 
   DEFAULT_LANGUAGE, 
   getBrowserLanguage,
+  getTranslations,
+  translateText,
+  preloadTranslations,
   isLanguageSupported,
-  type Language 
-} from '@/lib/i18n';
+  type Language,
+  type TranslationData,
+  type TranslationKeys,
+  type TranslationParams
+} from '@/lib/i18n-enhanced';
 import { logger } from '@/lib/logger';
 
 interface LanguageContextType {
@@ -40,16 +46,19 @@ interface LanguageContextType {
   
   // Actions
   setLanguage: (languageCode: string) => Promise<void>;
-  t: (key: string, params?: Record<string, string | number>) => string;
+  t: (key: TranslationKeys | string, params?: TranslationParams) => string;
   
   // Performance utilities
   preloadLanguage: (languageCode: string) => Promise<void>;
   getCurrentTranslations: () => TranslationData;
+  
+  // Debug utilities (development only)
+  getCacheInfo: () => { size: number; languages: string[] };
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export const useLanguage = () => {
+export const useLanguage = (): LanguageContextType => {
   const context = useContext(LanguageContext);
   if (!context) {
     throw new Error('useLanguage must be used within a LanguageProvider');
@@ -62,108 +71,6 @@ interface LanguageProviderProps {
   fallbackLanguage?: string;
   enablePreloading?: boolean;
 }
-
-// Enhanced types
-type TranslationData = Record<string, any>;
-type TranslationParams = Record<string, string | number>;
-
-// Translation cache with intelligent memory management
-class TranslationCache {
-  private cache = new Map<string, TranslationData>();
-  private readonly maxSize = 6; // Max supported languages
-  private accessTimes = new Map<string, number>();
-
-  set(key: string, value: TranslationData): void {
-    // LRU eviction if cache is full
-    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
-      const oldestKey = Array.from(this.accessTimes.entries())
-        .sort(([, a], [, b]) => a - b)[0][0];
-      
-      this.cache.delete(oldestKey);
-      this.accessTimes.delete(oldestKey);
-    }
-
-    this.cache.set(key, value);
-    this.accessTimes.set(key, Date.now());
-  }
-
-  get(key: string): TranslationData | null {
-    const value = this.cache.get(key);
-    if (value) {
-      this.accessTimes.set(key, Date.now()); // Update access time
-      return value;
-    }
-    return null;
-  }
-
-  has(key: string): boolean {
-    return this.cache.has(key);
-  }
-
-  size(): number {
-    return this.cache.size;
-  }
-}
-
-// Global translation cache instance
-const translationCache = new TranslationCache();
-
-// Get translations with intelligent caching
-const getTranslations = async (languageCode: string): Promise<TranslationData> => {
-  // Validate language code
-  if (!isLanguageSupported(languageCode)) {
-    console.warn(`Language ${languageCode} not supported, falling back to ${DEFAULT_LANGUAGE}`);
-    languageCode = DEFAULT_LANGUAGE;
-  }
-
-  // Check cache first
-  const cached = translationCache.get(languageCode);
-  if (cached) {
-    return cached;
-  }
-
-  try {
-    // Dynamic import with intelligent fallback
-    let translations: TranslationData;
-    
-    switch (languageCode) {
-      case 'en':
-        translations = (await import('@/locales/en.json')).default;
-        break;
-      case 'fr':
-        translations = (await import('@/locales/fr.json')).default;
-        break;
-      case 'es':
-        translations = (await import('@/locales/es.json')).default;
-        break;
-      case 'de':
-        translations = (await import('@/locales/de.json')).default;
-        break;
-      case 'it':
-        translations = (await import('@/locales/it.json')).default;
-        break;
-      case 'pt':
-        translations = (await import('@/locales/pt.json')).default;
-        break;
-      default:
-        translations = (await import('@/locales/en.json')).default;
-    }
-
-    translationCache.set(languageCode, translations);
-    return translations;
-    
-  } catch (error) {
-    console.error(`Failed to load translations for ${languageCode}:`, error);
-    
-    // Ultimate fallback to default language
-    if (languageCode !== DEFAULT_LANGUAGE) {
-      return getTranslations(DEFAULT_LANGUAGE);
-    }
-    
-    // If even default language fails, return empty object
-    return {};
-  }
-};
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ 
   children,
@@ -184,7 +91,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({
   // Performance optimizations
   const isInitialized = useRef(false);
   const preloadPromises = useRef(new Map<string, Promise<void>>());
-
+  
   // Memoized language object
   const language = useMemo(() => 
     SUPPORTED_LANGUAGES.find(lang => lang.code === currentLanguage) || SUPPORTED_LANGUAGES[0],
@@ -357,6 +264,43 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({
   }, [loadTranslations]);
 
   /**
+   * Enhanced translation function with fallback support
+   */
+  const t = useCallback((
+    key: TranslationKeys | string, 
+    params?: TranslationParams
+  ): string => {
+    if (loadingTranslations && !isInitialized.current) {
+      // Return key's last part as placeholder while loading initially
+      return key.split('.').pop() || key;
+    }
+
+    return translateText(currentTranslations, key, params, fallbackTranslations);
+  }, [currentTranslations, fallbackTranslations, loadingTranslations]);
+
+  /**
+   * Get current translations (for debugging or advanced usage)
+   */
+  const getCurrentTranslations = useCallback((): TranslationData => {
+    return { ...currentTranslations };
+  }, [currentTranslations]);
+
+  /**
+   * Get cache information (development only)
+   */
+  const getCacheInfo = useCallback(() => {
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        size: Object.keys(currentTranslations).length,
+        languages: SUPPORTED_LANGUAGES
+          .map(lang => lang.code)
+          .filter(code => code === currentLanguage)
+      };
+    }
+    return { size: 0, languages: [] };
+  }, [currentTranslations, currentLanguage]);
+
+  /**
    * Initialize translations on mount and user change
    */
   useEffect(() => {
@@ -392,11 +336,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({
               .filter(code => code !== initialLanguage && code !== fallbackLanguage)
               .slice(0, 2); // Limit initial preloading
             
-            // Preload in background - don't wait
-            languagesToPreload.forEach(code => {
-              preloadLanguage(code).catch(err => {
-                console.warn('Preloading failed for', code, err);
-              });
+            preloadTranslations(languagesToPreload).catch(err => {
+              console.warn('Preloading failed:', err);
             });
           }
         }
@@ -418,86 +359,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [getInitialLanguage, fallbackLanguage, enablePreloading, loadTranslations, preloadLanguage]);
-
-  /**
-   * Enhanced translation function with fallback support
-   */
-  const t = useCallback((
-    key: string, 
-    params?: TranslationParams
-  ): string => {
-    if (loadingTranslations && !isInitialized.current) {
-      // Return key's last part as placeholder while loading initially
-      return key.split('.').pop() || key;
-    }
-
-    return translateText(currentTranslations, key, params, fallbackTranslations);
-  }, [currentTranslations, fallbackTranslations, loadingTranslations]);
-
-  /**
-   * Get current translations (for debugging or advanced usage)
-   */
-  const getCurrentTranslations = useCallback((): TranslationData => {
-    return { ...currentTranslations };
-  }, [currentTranslations]);
-
-// Enhanced translation function with parameter interpolation
-function translateText(
-  translations: TranslationData,
-  key: string,
-  params?: TranslationParams,
-  fallbackLang?: TranslationData
-): string {
-  // Handle nested keys like 'common.loading'
-  let translation: any = translations;
-  const keys = key.split('.');
-  
-  for (const k of keys) {
-    if (translation && typeof translation === 'object') {
-      translation = translation[k];
-    } else {
-      translation = undefined;
-      break;
-    }
-  }
-  
-  // Fallback to fallback language if available
-  if (translation === undefined && fallbackLang) {
-    let fallbackTranslation: any = fallbackLang;
-    for (const k of keys) {
-      if (fallbackTranslation && typeof fallbackTranslation === 'object') {
-        fallbackTranslation = fallbackTranslation[k];
-      } else {
-        fallbackTranslation = undefined;
-        break;
-      }
-    }
-    translation = fallbackTranslation;
-  }
-  
-  // Final fallback to key itself
-  if (translation === undefined || translation === null) {
-    translation = key.split('.').pop() || key;
-  }
-  
-  // Ensure we have a string
-  if (typeof translation !== 'string') {
-    translation = String(translation);
-  }
-  
-  // Replace parameters using improved regex
-  if (params && typeof translation === 'string') {
-    for (const [param, value] of Object.entries(params)) {
-      translation = translation.replace(
-        new RegExp(`{{${param}}}`, 'g'), 
-        String(value)
-      );
-    }
-  }
-  
-  return translation;
-}
+  }, [getInitialLanguage, fallbackLanguage, enablePreloading, loadTranslations]);
 
   // Create context value with memoization
   const contextValue = useMemo((): LanguageContextType => ({
@@ -510,7 +372,8 @@ function translateText(
     setLanguage,
     t,
     preloadLanguage,
-    getCurrentTranslations
+    getCurrentTranslations,
+    getCacheInfo
   }), [
     currentLanguage,
     language,
@@ -520,7 +383,8 @@ function translateText(
     setLanguage,
     t,
     preloadLanguage,
-    getCurrentTranslations
+    getCurrentTranslations,
+    getCacheInfo
   ]);
 
   return (

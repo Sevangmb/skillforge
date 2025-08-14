@@ -4,6 +4,50 @@ import type { User, Skill, Achievement } from '@/lib/types';
 import { createMemoizedSelector, statePerformanceMonitor } from '@/lib/state-optimization';
 import { logger } from '@/lib/logger';
 
+// Learning analytics types
+export interface LearningMetrics {
+  averageSessionDuration: number;
+  retentionRate: number;
+  currentStreak: number;
+  learningVelocity: number;
+  totalSessions: number;
+  completedSkills: number;
+  categoryProgress: Record<string, number>;
+  totalTimeSpent: number;
+  weeklyProgress: WeeklyData[];
+  categoryStats: CategoryStats[];
+}
+
+export interface LearningSession {
+  id: string;
+  userId: string;
+  startTime: Date;
+  endTime?: Date;
+  timeSpent: number;
+  skillsWorkedOn: string[];
+  questionsAnswered: number;
+  correctAnswers: number;
+  topics: string[];
+}
+
+export interface CategoryStats {
+  category: string;
+  completedSkills: number;
+  totalSkills: number;
+  averageScore: number;
+  timeSpent: number;
+  streak: number;
+}
+
+export interface WeeklyData {
+  week: string;
+  totalTime: number;
+  skillsCompleted: number;
+  questionsAnswered: number;
+  averageScore: number;
+  categories: CategoryStats[];
+}
+
 // Types for store state
 interface AppState {
   // User state
