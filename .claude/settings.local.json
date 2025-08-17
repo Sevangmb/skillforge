@@ -14,7 +14,10 @@
       "Bash(firebase deploy:*)",
       "Bash(firebase apps:list:*)",
       "Bash(firebase apps:sdkconfig:*)",
-      "Bash(firebase storage:buckets:list:*)"
+      "Bash(firebase storage:buckets:list:*)",
+      "Bash(git push:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)"
     ],
     "deny": []
   }
