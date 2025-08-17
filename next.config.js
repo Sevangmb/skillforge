@@ -1,13 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // Remove 'export' output for Firebase App Hosting - it expects standalone mode
+  output: 'standalone',
   trailingSlash: true,
   images: {
     unoptimized: true
   },
-  distDir: 'out',
-  assetPrefix: '',
-  basePath: '',
   experimental: {
     esmExternals: 'loose'
   },

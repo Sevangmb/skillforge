@@ -17,7 +17,8 @@
       "Bash(firebase storage:buckets:list:*)",
       "Bash(git push:*)",
       "Bash(git fetch:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

@@ -1,0 +1,27 @@
+runConfig:
+  # CPU and memory configuration  
+  cpu: 1
+  memoryMiB: 512
+  # Maximum number of requests a container can handle
+  maxInstances: 100
+  minInstances: 0
+  concurrency: 80
+
+env:
+  # Firebase configuration will be automatically injected
+  - variable: NODE_ENV
+    value: production
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyDmRORJqVcDW6OWFP7Oiw1npDyGXj1y860
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: skillforge-ai-tk7mp.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: skillforge-ai-tk7mp
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: skillforge-ai-tk7mp.firebasestorage.app
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "430093616142"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:430093616142:web:edc01ef0bcaaf35fa6285f
+  - variable: GOOGLE_AI_API_KEY
+    value: AIzaSyA_6dOGLr7Tmzmn0jcRMA8PO_YY8h7Bc1U
