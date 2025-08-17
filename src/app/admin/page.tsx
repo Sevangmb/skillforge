@@ -231,7 +231,7 @@ const AdminPage = () => {
                                     {item.keywords && <div className="text-sm text-muted-foreground">🚩 {item.keywords} mots-clés</div>}
                                 </TableCell>
                                 <TableCell><Badge variant="outline">{item.typeIcon} {item.type}</Badge></TableCell>
-                                <TableCell><Badge variant={item.priorityBadge as any}>{item.priority}</Badge></TableCell>
+                                <TableCell><Badge variant={item.priorityBadge as "secondary" | "destructive" | "outline"}>{item.priority}</Badge></TableCell>
                                 <TableCell className="flex items-center gap-2">{item.statusIcon} {item.status}</TableCell>
                                 <TableCell>{item.submitted}<div className="text-sm text-muted-foreground">par {item.user}</div></TableCell>
                                 <TableCell>{item.moderator}</TableCell>
