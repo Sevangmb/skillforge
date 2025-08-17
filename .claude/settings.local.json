@@ -5,7 +5,16 @@
       "Bash(npm run build:*)",
       "Bash(npx next:*)",
       "Bash(git add:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git commit:*)",
+      "Bash(firebase --version)",
+      "Bash(firebase projects:list:*)",
+      "Bash(firebase firestore:databases:create:*)",
+      "Bash(firebase firestore:rules:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(firebase apps:list:*)",
+      "Bash(firebase apps:sdkconfig:*)",
+      "Bash(firebase storage:buckets:list:*)"
     ],
     "deny": []
   }
